@@ -1,0 +1,131 @@
+---
+title: "Configuring Your CryptoMCP Environment"
+sidebarTitle: "Env Setup"
+description: "Set up your CryptoMCP .env file with data provider API keys, chain RPC endpoints, and optional caching settings to customize behavior."
+---
+
+CryptoMCP reads all of its runtime configuration from a single `.env` file in your project root. Before you start the server for the first time, copy the provided example file, fill in your API keys, and optionally tune caching and networking settings to match your environment.
+
+## How Configuration Works
+
+When CryptoMCP starts, it looks for a `.env` file in the same directory as the server entry point. Every value in that file is loaded into the process environment before any tool handlers run. If a required variable is missing, the server exits immediately with a descriptive error message so you know exactly what to fix.
+
+To create your initial configuration file, run:
+
+```bash
+cp .env.example .env
+```
+
+Then open `.env` in your editor and replace the placeholder values with your real credentials.
+
+## Full `.env.example`
+
+The annotated example below shows every variable CryptoMCP recognizes, grouped by purpose.
+
+```bash
+# =============================================================
+# CryptoMCP — Environment Configuration
+# Copy this file to .env and fill in your values.
+# Never commit .env to version control.
+# =============================================================
+
+# -------------------------------------------------------------
+# API KEYS — Data Providers
+# -------------------------------------------------------------
+
+# CoinGecko — market prices, 24h stats, token metadata
+# Free key: https://www.coingecko.com/en/developers/dashboard
+COINGECKO_API_KEY=your_coingecko_api_key_here
+
+# Etherscan — Ethereum on-chain data, transactions, balances
+# Free key: https://etherscan.io/myapikey
+ETHERSCAN_API_KEY=your_etherscan_api_key_here
+
+# Polygonscan — Polygon (MATIC) on-chain data
+# Free key: https://polygonscan.com/myapikey
+POLYGONSCAN_API_KEY=your_polygonscan_api_key_here
+
+# BscScan — BNB Smart Chain on-chain data
+# Free key: https://bscscan.com/myapikey
+BSCSCAN_API_KEY=your_bscscan_api_key_here
+
+# CryptoPanic — crypto news headlines
+# Free key: https://cryptopanic.com/developers/api/
+CRYPTOPANIC_API_KEY=your_cryptopanic_api_key_here
+
+# -------------------------------------------------------------
+# RPC ENDPOINTS (optional)
+# Provide your own endpoints for better reliability and rate limits.
+# Defaults to public endpoints if omitted.
+# -------------------------------------------------------------
+
+# Ethereum mainnet JSON-RPC endpoint
+# Example providers: Alchemy, Infura, QuickNode
+ETHEREUM_RPC_URL=https://mainnet.infura.io/v3/your_project_id
+
+# Polygon mainnet JSON-RPC endpoint
+POLYGON_RPC_URL=https://polygon-mainnet.infura.io/v3/your_project_id
+
+# BNB Smart Chain mainnet JSON-RPC endpoint
+BSC_RPC_URL=https://bsc-dataseed.binance.org/
+
+# -------------------------------------------------------------
+# CACHE SETTINGS (optional)
+# All TTL values are in seconds. Set to 0 to disable caching.
+# -------------------------------------------------------------
+
+# How long to cache token prices (default: 30 seconds)
+CACHE_TTL_PRICES=30
+
+# How long to cache market data such as volume and market cap (default: 60 seconds)
+CACHE_TTL_MARKET=60
+
+# How long to cache wallet balances (default: 120 seconds)
+CACHE_TTL_BALANCES=120
+
+# How long to cache news headlines (default: 300 seconds)
+CACHE_TTL_NEWS=300
+
+# -------------------------------------------------------------
+# SERVER SETTINGS (optional)
+# -------------------------------------------------------------
+
+# Port the MCP server listens on (default: 3000)
+PORT=3000
+
+# Log level: debug | info | warn | error (default: info)
+LOG_LEVEL=info
+```
+
+## Environment Variable Reference
+
+| Variable | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `COINGECKO_API_KEY` | string | Yes | — | API key for CoinGecko market data |
+| `ETHERSCAN_API_KEY` | string | Yes | — | API key for Ethereum on-chain queries |
+| `POLYGONSCAN_API_KEY` | string | No | — | API key for Polygon on-chain queries |
+| `BSCSCAN_API_KEY` | string | No | — | API key for BNB Smart Chain queries |
+| `CRYPTOPANIC_API_KEY` | string | No | — | API key for crypto news headlines |
+| `ETHEREUM_RPC_URL` | string | No | Public endpoint | JSON-RPC URL for Ethereum mainnet |
+| `POLYGON_RPC_URL` | string | No | Public endpoint | JSON-RPC URL for Polygon mainnet |
+| `BSC_RPC_URL` | string | No | Public endpoint | JSON-RPC URL for BNB Smart Chain |
+| `CACHE_TTL_PRICES` | integer | No | `30` | Price cache lifetime in seconds |
+| `CACHE_TTL_MARKET` | integer | No | `60` | Market data cache lifetime in seconds |
+| `CACHE_TTL_BALANCES` | integer | No | `120` | Wallet balance cache lifetime in seconds |
+| `CACHE_TTL_NEWS` | integer | No | `300` | News cache lifetime in seconds |
+| `PORT` | integer | No | `3000` | Port the MCP server binds to |
+| `LOG_LEVEL` | string | No | `info` | Logging verbosity level |
+
+<Warning>
+Never commit your `.env` file to version control. It contains secret API keys that could be abused if exposed. Add `.env` to your `.gitignore` immediately:
+
+```bash
+echo ".env" >> .gitignore
+```
+
+The `.env.example` file — which contains only placeholder values — is safe to commit and should be kept up to date for other contributors.
+</Warning>
+
+<Tip>
+You can maintain separate configuration files for different environments. Create `.env.development` for local work and `.env.production` for your deployed instance. Many Node.js toolchains (such as `dotenv-flow`) automatically load the right file based on the `NODE_ENV` environment variable, so your dev keys never leak into production.
+</Tip>

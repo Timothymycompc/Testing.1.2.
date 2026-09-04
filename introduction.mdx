@@ -1,0 +1,71 @@
+---
+title: "CryptoMCP: Blockchain & Crypto APIs via MCP"
+sidebarTitle: "Introduction"
+description: "CryptoMCP connects your AI assistant to live crypto markets, on-chain data, wallets, and DeFi through a single MCP server interface."
+---
+
+CryptoMCP is an MCP (Model Context Protocol) server that bridges your AI client — such as Claude Desktop or Cursor — directly to the world's leading cryptocurrency and blockchain APIs. Instead of copying prices from websites or writing custom integrations, you ask your AI assistant natural-language questions and CryptoMCP handles the API calls, data parsing, and response formatting behind the scenes.
+
+<CardGroup cols={2}>
+  <Card title="Quick Start" icon="rocket" href="/quickstart">
+    Install CryptoMCP and make your first crypto query in under five minutes.
+  </Card>
+  <Card title="MCP Overview" icon="cube" href="/concepts/mcp-overview">
+    Learn how the Model Context Protocol works and why it powers CryptoMCP.
+  </Card>
+  <Card title="Crypto APIs" icon="chart-line" href="/apis/market-data">
+    Explore the market data, on-chain, and DeFi APIs CryptoMCP aggregates.
+  </Card>
+  <Card title="MCP Tool Reference" icon="code" href="/reference/tools/price">
+    Browse every MCP tool exposed by CryptoMCP with full parameter docs.
+  </Card>
+</CardGroup>
+
+## What you can do
+
+CryptoMCP exposes a growing set of tools your AI assistant can invoke on your behalf. Once connected, you can ask questions in plain English and receive structured, real-time answers drawn from live blockchain data.
+
+<CardGroup cols={2}>
+  <Card title="Live Market Data" icon="arrow-trend-up">
+    Query real-time prices, 24-hour volume, market cap, and percentage changes for any token.
+  </Card>
+  <Card title="On-Chain Analytics" icon="link">
+    Look up transactions, inspect blocks, and trace on-chain activity across supported networks.
+  </Card>
+  <Card title="Wallet Balances" icon="wallet">
+    Fetch native and ERC-20 token balances for any wallet address without exposing private keys.
+  </Card>
+  <Card title="DeFi Protocol Data" icon="droplet">
+    Retrieve liquidity pool statistics, reserve ratios, and trading pair details from major DeFi protocols.
+  </Card>
+  <Card title="Gas Estimates" icon="gauge-high">
+    Get current gas prices and fee estimates before submitting transactions.
+  </Card>
+  <Card title="Crypto News" icon="newspaper">
+    Pull the latest headlines for any coin or keyword to stay on top of market-moving events.
+  </Card>
+</CardGroup>
+
+## How it works
+
+CryptoMCP runs as a local Node.js process that speaks the Model Context Protocol. Your AI client discovers the server's available tools at startup and calls them automatically whenever you ask a question that requires live data. You never leave your AI client — CryptoMCP fetches, parses, and returns the data inline.
+
+```text
+Your AI Client  ──MCP──►  CryptoMCP Server  ──HTTPS──►  Crypto APIs
+     ▲                           │
+     └───────── structured ──────┘
+                 response
+```
+
+## Supported networks and data sources
+
+CryptoMCP aggregates data from multiple providers so you get broad coverage with a single configuration:
+
+- **Price & market data** — CoinGecko, CoinMarketCap
+- **On-chain data** — Etherscan, Alchemy, QuickNode
+- **DeFi protocols** — Uniswap subgraph, The Graph
+- **News & sentiment** — CryptoPanic, LunarCrush
+
+<Note>
+  CryptoMCP is a learning and exploration project designed to demonstrate how MCP servers can aggregate crypto APIs for AI assistants. It is not intended for production trading systems or financial advice. Always verify critical data against primary sources before making any financial decisions.
+</Note>

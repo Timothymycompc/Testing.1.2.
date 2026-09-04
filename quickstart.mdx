@@ -1,47 +1,180 @@
 ---
-title: "Quickstart"
-description: "Begin with a guide on the fastest path to a successful outcome"
+title: "Get Started with CryptoMCP in Minutes"
+sidebarTitle: "Quick Start"
+description: "Install CryptoMCP, add your API keys, and make your first crypto data query through an MCP-compatible AI client in under 5 minutes."
 ---
 
-Describe how someone begins using your product. What is the first thing they need to do? Are there any prerequisites?
-
-A quickstart should take someone from zero to using your product. They'll get a quick win and a sense of what they can accomplish.
+This guide walks you through installing CryptoMCP, wiring it up to your AI client, and running your very first live crypto query — all in about five minutes. By the end, your AI assistant will be able to answer questions like "What is Bitcoin's current price?" or "Show me the last ten transactions for this wallet address" by calling real blockchain APIs behind the scenes.
 
 ## Prerequisites
 
-Before you begin, you must have:
+Before you begin, make sure you have the following ready:
 
-- Requirement one (for example, Node.js 18+, a free account, an API key)
-- Requirement two (for example, a compatible device, a compatible browser, a compatible operating system)
-
-## Get started
+- **Node.js 18 or higher** — [download from nodejs.org](https://nodejs.org)
+- **An MCP-compatible AI client** — Claude Desktop, Cursor, or any client that supports MCP servers
+- **At least one crypto API key** — a free [CoinGecko](https://www.coingecko.com/en/api) or [CoinMarketCap](https://coinmarketcap.com/api/) key is enough to get started
 
 <Steps>
-  <Step title="Install">
-    Describe how to install your product or sign up.
+  <Step title="Clone and install CryptoMCP">
+    Clone the CryptoMCP repository and install its dependencies.
 
     ```bash
-    npm install your-package
+    git clone https://github.com/your-org/cryptomcp.git
+    cd cryptomcp
+    npm install
+    ```
+
+    The install step pulls in all required packages including the MCP SDK, API client libraries, and environment helpers. It typically completes in under a minute.
+  </Step>
+
+  <Step title="Configure your API keys">
+    Copy the example environment file and fill in your API keys.
+
+    ```bash
+    cp .env.example .env
+    ```
+
+    Open `.env` in your editor and add your keys:
+
+    ```bash
+    # .env
+
+    # Required: at least one price/market data provider
+    COINGECKO_API_KEY=your_coingecko_key_here
+    COINMARKETCAP_API_KEY=your_coinmarketcap_key_here
+
+    # Optional: on-chain data providers
+    ETHERSCAN_API_KEY=your_etherscan_key_here
+    ALCHEMY_API_KEY=your_alchemy_key_here
+
+    # Optional: news providers
+    CRYPTOPANIC_API_KEY=your_cryptopanic_key_here
+
+    # Server config
+    MCP_SERVER_PORT=3000
+    LOG_LEVEL=info
+    ```
+
+    You only need keys for the data sources you plan to use. CryptoMCP will skip providers whose keys are missing and use whichever sources are configured.
+  </Step>
+
+  <Step title="Start the MCP server">
+    Launch CryptoMCP with the start script:
+
+    ```bash
+    npm start
+    ```
+
+    Alternatively, run the entry point directly:
+
+    ```bash
+    node index.js
+    ```
+
+    You should see output similar to the following, confirming the server is ready:
+
+    ```text
+    [CryptoMCP] Starting server...
+    [CryptoMCP] Loaded tools: get_price, get_market_data, get_wallet_balance,
+                              get_transaction, get_block, get_gas, get_defi_pool,
+                              get_news, list_tokens
+    [CryptoMCP] MCP server listening on stdio
+    [CryptoMCP] Ready ✓
     ```
   </Step>
-  <Step title="Configure">
-    Describe any setup or configuration needed before first use.
 
-    ```bash
-    your-cli init
-    ```
+  <Step title="Connect your AI client">
+    Tell your AI client where to find the CryptoMCP server. The exact steps vary by client — below are instructions for the two most common options.
+
+    <Tabs>
+      <Tab title="Claude Desktop">
+        Open your Claude Desktop configuration file. On macOS it lives at `~/Library/Application Support/Claude/claude_desktop_config.json`; on Windows at `%APPDATA%\Claude\claude_desktop_config.json`.
+
+        Add a `cryptomcp` entry inside `mcpServers`:
+
+        ```json
+        {
+          "mcpServers": {
+            "cryptomcp": {
+              "command": "node",
+              "args": ["/absolute/path/to/cryptomcp/index.js"]
+            }
+          }
+        }
+        ```
+
+        Replace `/absolute/path/to/cryptomcp/index.js` with the actual path on your machine, then restart Claude Desktop. You should see a hammer icon (🔨) in the chat interface indicating tools are available.
+      </Tab>
+      <Tab title="Cursor">
+        Open Cursor's settings and navigate to **Features → MCP Servers**. Click **Add Server** and fill in the details:
+
+        - **Name:** `cryptomcp`
+        - **Command:** `node`
+        - **Args:** `/absolute/path/to/cryptomcp/index.js`
+
+        Save and restart Cursor. CryptoMCP's tools will appear in the available tools panel.
+      </Tab>
+      <Tab title="Other MCP Clients">
+        Any MCP-compatible client that supports stdio transport can connect to CryptoMCP. Point the client at:
+
+        ```json
+        {
+          "command": "node",
+          "args": ["/absolute/path/to/cryptomcp/index.js"]
+        }
+        ```
+
+        Refer to your client's documentation for the exact configuration format.
+      </Tab>
+    </Tabs>
   </Step>
-  <Step title="Run it">
-    Show the first thing a user does to see it working.
 
-    ```bash
-    your-cli start
+  <Step title="Make your first query">
+    With CryptoMCP connected, open a new conversation in your AI client and try a few of these prompts:
+
+    ```text
+    What is the current price of Bitcoin?
+    ```
+
+    ```text
+    Show me the 24-hour market data for ETH and SOL.
+    ```
+
+    ```text
+    What is the ETH balance of wallet 0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045?
+    ```
+
+    Your AI assistant calls the relevant CryptoMCP tool, fetches live data, and presents the result inline — no copy-pasting from block explorers required.
+
+    **Example response for the Bitcoin price query:**
+
+    ```text
+    The current price of Bitcoin (BTC) is $67,423.18 USD, up 2.4% in the
+    last 24 hours. Market cap is approximately $1.33 trillion with a 24-hour
+    trading volume of $38.6 billion.
     ```
   </Step>
 </Steps>
 
 <Tip>
-  Give people a way to get help. This could be a link to a support page, a chat with a customer support agent, or a forum for your product.
-
-  Example: Need help? Reach out to us at [support@yourcompany.com](mailto:support@yourcompany.com).
+  For a full list of supported environment variables and instructions for configuring multiple API providers, head to the [Configuration & API Keys](/configuration/api-keys) guide. It covers rate-limit handling, provider fallbacks, and how to set different keys per blockchain network.
 </Tip>
+
+## Next steps
+
+Now that CryptoMCP is running, explore what else it can do:
+
+<CardGroup cols={2}>
+  <Card title="All Available Tools" icon="wrench" href="/reference/tools/price">
+    Browse the complete MCP tool reference with parameters and response schemas.
+  </Card>
+  <Card title="Configuration Guide" icon="sliders" href="/configuration/api-keys">
+    Add more API keys and fine-tune provider settings for broader data coverage.
+  </Card>
+  <Card title="Market Data APIs" icon="chart-line" href="/apis/market-data">
+    Learn which market data providers CryptoMCP supports and how to choose between them.
+  </Card>
+  <Card title="MCP Concepts" icon="cube" href="/concepts/mcp-overview">
+    Understand how MCP servers work and how CryptoMCP fits the protocol.
+  </Card>
+</CardGroup>

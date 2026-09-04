@@ -1,0 +1,169 @@
+---
+title: "get_price and get_market_data Tool Reference"
+sidebarTitle: "Price & Market"
+description: "Full reference for the get_price and get_market_data MCP tools, including all parameters, response schemas, and example payloads."
+---
+
+These two tools query live price and market data from configured providers, giving your AI client instant access to current token prices, 24-hour trading volumes, market capitalizations, and price change metrics across hundreds of cryptocurrencies.
+
+## `get_price`
+
+Returns the current price of one or more tokens in a specified quote currency. Use `symbol` for a single token lookup or `symbols` for a batched request when you need prices for multiple assets at once.
+
+### Parameters
+
+<ParamField body="symbol" type="string" required>
+  The ticker symbol of the token to price, e.g. `"BTC"`, `"ETH"`, or `"SOL"`. Case-insensitive. Required unless you are using the batch `symbols` parameter instead.
+</ParamField>
+
+<ParamField body="currency" type="string" default="USD">
+  The quote currency for the returned price. Accepts fiat codes (`"USD"`, `"EUR"`, `"GBP"`) or crypto quote currencies (`"BTC"`, `"ETH"`).
+</ParamField>
+
+<ParamField body="symbols" type="string[]">
+  An array of token ticker symbols for a batch price query, e.g. `["BTC", "ETH", "SOL"]`. When provided, `symbol` is ignored. The response will be a map of each symbol to its price.
+</ParamField>
+
+### Example Request
+
+```json
+{
+  "tool": "get_price",
+  "input": {
+    "symbol": "ETH",
+    "currency": "USD"
+  }
+}
+```
+
+### Example Response
+
+```json
+{
+  "symbol": "ETH",
+  "currency": "USD",
+  "price": 3241.58,
+  "timestamp": "2024-11-14T10:32:00Z"
+}
+```
+
+### Batch Example Request
+
+```json
+{
+  "tool": "get_price",
+  "input": {
+    "symbols": ["BTC", "ETH", "SOL"],
+    "currency": "USD"
+  }
+}
+```
+
+### Batch Example Response
+
+```json
+{
+  "currency": "USD",
+  "prices": {
+    "BTC": 91245.00,
+    "ETH": 3241.58,
+    "SOL": 198.43
+  },
+  "timestamp": "2024-11-14T10:32:01Z"
+}
+```
+
+### Error Codes
+
+| Code | Meaning |
+|------|---------|
+| `INVALID_SYMBOL` | The ticker symbol was not recognised by the configured provider. Check spelling and ensure the token is listed. |
+| `PROVIDER_ERROR` | The upstream data provider returned an error or unexpected response. Retry after a short delay. |
+| `RATE_LIMIT` | Your request rate has exceeded the provider's limit. Slow down requests or upgrade your provider plan. |
+
+---
+
+## `get_market_data`
+
+Returns a full 24-hour market snapshot for a single token, including price, market cap, trading volume, and supply figures. Use this tool when you need more context than a raw price — for example, to assess token liquidity or recent momentum.
+
+### Parameters
+
+<ParamField body="symbol" type="string" required>
+  The ticker symbol of the token, e.g. `"BTC"` or `"LINK"`. Case-insensitive.
+</ParamField>
+
+<ParamField body="currency" type="string" default="USD">
+  The quote currency for all returned monetary values. Accepts fiat codes (`"USD"`, `"EUR"`) or crypto quote currencies (`"BTC"`, `"ETH"`).
+</ParamField>
+
+### Response Schema
+
+<ResponseField name="symbol" type="string">
+  The token ticker symbol as normalised by the provider, e.g. `"BTC"`.
+</ResponseField>
+
+<ResponseField name="currency" type="string">
+  The quote currency used for all monetary values in the response.
+</ResponseField>
+
+<ResponseField name="price" type="number">
+  The current price of the token in the specified quote currency.
+</ResponseField>
+
+<ResponseField name="market_cap" type="number">
+  Total market capitalisation: circulating supply multiplied by the current price.
+</ResponseField>
+
+<ResponseField name="volume_24h" type="number">
+  Total trading volume across exchanges over the past 24 hours, in the quote currency.
+</ResponseField>
+
+<ResponseField name="price_change_24h" type="number">
+  Absolute price change over the past 24 hours in the quote currency. Negative values indicate a price decrease.
+</ResponseField>
+
+<ResponseField name="price_change_pct_24h" type="number">
+  Percentage price change over the past 24 hours. Negative values indicate a price decrease.
+</ResponseField>
+
+<ResponseField name="circulating_supply" type="number">
+  The number of tokens currently in circulation.
+</ResponseField>
+
+<ResponseField name="total_supply" type="number">
+  The total number of tokens that exist, including those not yet in circulation. May be `null` for tokens with no hard cap.
+</ResponseField>
+
+### Example Request
+
+```json
+{
+  "tool": "get_market_data",
+  "input": {
+    "symbol": "BTC",
+    "currency": "USD"
+  }
+}
+```
+
+### Example Response
+
+```json
+{
+  "symbol": "BTC",
+  "currency": "USD",
+  "price": 91245.00,
+  "market_cap": 1801234567890,
+  "volume_24h": 38492817234,
+  "price_change_24h": 1823.50,
+  "price_change_pct_24h": 2.04,
+  "circulating_supply": 19752300,
+  "total_supply": 21000000,
+  "timestamp": "2024-11-14T10:32:00Z"
+}
+```
+
+<Note>
+  CryptoMCP uses **CoinGecko** as the default market data provider. You can configure an alternative provider (such as CoinMarketCap or Binance) in your `cryptomcp.config.json`. Provider availability and data freshness vary — CoinGecko free tier data is refreshed approximately every 60 seconds.
+</Note>

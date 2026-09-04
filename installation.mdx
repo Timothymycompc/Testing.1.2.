@@ -1,0 +1,231 @@
+---
+title: "Installing and Running CryptoMCP Locally"
+sidebarTitle: "Installation"
+description: "Step-by-step instructions to install CryptoMCP on your machine, including Node.js requirements, dependency setup, and environment configuration."
+---
+
+CryptoMCP runs as a local Node.js process on your machine and communicates with your AI client over stdio using the Model Context Protocol. This page covers everything from system requirements through verifying a healthy server startup, so you have a solid foundation before you start configuring API keys and making queries.
+
+## Requirements
+
+Make sure your system meets these requirements before installing:
+
+| Requirement | Minimum version | Notes |
+|---|---|---|
+| Node.js | 18.0.0 | LTS releases (18.x, 20.x, 22.x) are all supported |
+| npm | 9.0.0 | Bundled with Node.js 18+ |
+| Operating system | macOS 12, Windows 10, Ubuntu 20.04 | Any modern 64-bit OS works |
+| Disk space | ~150 MB | For node_modules after install |
+
+To check your current Node.js version, run:
+
+```bash
+node --version
+```
+
+If you need to upgrade, use [nvm](https://github.com/nvm-sh/nvm) (macOS/Linux) or [nvm-windows](https://github.com/coreybutler/nvm-windows) to manage multiple Node.js versions side by side.
+
+## Clone the repository
+
+Start by cloning CryptoMCP from GitHub and moving into the project directory:
+
+```bash
+git clone https://github.com/your-org/cryptomcp.git
+cd cryptomcp
+```
+
+## Install dependencies
+
+Install the project's Node.js dependencies using your preferred package manager:
+
+<CodeGroup>
+  ```bash npm
+  npm install
+  ```
+
+  ```bash yarn
+  yarn install
+  ```
+
+  ```bash pnpm
+  pnpm install
+  ```
+</CodeGroup>
+
+The install step downloads all required packages into `node_modules/`, including the MCP SDK, HTTP clients for each crypto API provider, and utility libraries. On a typical broadband connection this takes 20–60 seconds.
+
+After installation your project directory should look like this:
+
+```text
+cryptomcp/
+├── index.js          # MCP server entry point
+├── tools/            # One file per MCP tool (get_price.js, etc.)
+├── providers/        # API client wrappers for each data source
+├── .env.example      # Template environment file
+├── .env              # Your local config (created in next step)
+├── package.json
+└── node_modules/
+```
+
+## Set up your environment
+
+CryptoMCP reads all configuration — API keys, server options, log level — from a `.env` file in the project root. Copy the example file to create your own:
+
+```bash
+cp .env.example .env
+```
+
+Open `.env` in your editor. Here is what the file contains and what each variable does:
+
+```bash
+# .env — CryptoMCP environment configuration
+
+# ── Market data providers ──────────────────────────────────────────────────
+# Provide at least one of these to enable price and market data tools.
+COINGECKO_API_KEY=        # Free tier available at coingecko.com/en/api
+COINMARKETCAP_API_KEY=    # Free tier available at coinmarketcap.com/api
+
+# ── On-chain data providers ────────────────────────────────────────────────
+# Required for get_transaction, get_block, get_wallet_balance, get_gas.
+ETHERSCAN_API_KEY=        # Free at etherscan.io/apis
+ALCHEMY_API_KEY=          # Free tier at alchemy.com
+
+# ── DeFi data ─────────────────────────────────────────────────────────────
+THEGRAPH_API_KEY=         # Required for get_defi_pool (thegraph.com)
+
+# ── News providers ────────────────────────────────────────────────────────
+CRYPTOPANIC_API_KEY=      # Free at cryptopanic.com/developers/api
+
+# ── Server configuration ──────────────────────────────────────────────────
+LOG_LEVEL=info            # Accepted values: debug | info | warn | error
+REQUEST_TIMEOUT_MS=10000  # Per-request HTTP timeout in milliseconds
+CACHE_TTL_SECONDS=30      # How long to cache repeated identical requests
+```
+
+You do not need every key to get started. CryptoMCP skips any tool whose required provider keys are absent and logs a clear warning at startup. A single `COINGECKO_API_KEY` is enough to use `get_price`, `get_market_data`, and `list_tokens`.
+
+<Note>
+  Never commit your `.env` file to version control. The repository's `.gitignore` already excludes it, but double-check before pushing to a shared remote.
+</Note>
+
+## Start the server
+
+Launch CryptoMCP with the npm start script:
+
+```bash
+npm start
+```
+
+Or invoke the entry point directly if you want to pass extra Node.js flags:
+
+```bash
+node --max-old-space-size=512 index.js
+```
+
+## Verify the server is running
+
+A healthy CryptoMCP startup produces output similar to this:
+
+```text
+[CryptoMCP] Starting server...
+[CryptoMCP] Node.js v20.11.0 detected ✓
+[CryptoMCP] Loading environment from .env ✓
+[CryptoMCP] Providers initialized:
+             ✓ CoinGecko        (get_price, get_market_data, list_tokens)
+             ✓ Etherscan        (get_transaction, get_block, get_gas)
+             ✓ Alchemy          (get_wallet_balance)
+             ✗ CoinMarketCap    (COINMARKETCAP_API_KEY not set — skipped)
+             ✗ CryptoPanic      (CRYPTOPANIC_API_KEY not set — skipped)
+[CryptoMCP] Registered 7 of 9 tools
+[CryptoMCP] MCP server listening on stdio
+[CryptoMCP] Ready ✓
+```
+
+The `✗` lines are informational — they tell you which providers were skipped due to missing keys, not that something is broken. As long as you see **`Ready ✓`** the server is accepting connections from your AI client.
+
+If you want verbose request-level logging during development, set `LOG_LEVEL=debug` in your `.env` and restart:
+
+```bash
+LOG_LEVEL=debug node index.js
+```
+
+Debug output shows every outbound API call, response time, and cache hit/miss:
+
+```text
+[CryptoMCP][debug] Tool invoked: get_price { tokens: ["bitcoin"] }
+[CryptoMCP][debug] → GET https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd
+[CryptoMCP][debug] ← 200 OK (143ms) [cache miss]
+[CryptoMCP][debug] Tool response: { bitcoin: { usd: 67423.18 } }
+```
+
+## Common installation issues
+
+<Accordion title="Permission error during npm install (EACCES)">
+  If you see `EACCES: permission denied` when running `npm install`, your global npm directory has incorrect permissions. Fix this without using `sudo` by pointing npm's prefix to a directory you own:
+
+  ```bash
+  mkdir -p ~/.npm-global
+  npm config set prefix '~/.npm-global'
+  export PATH=~/.npm-global/bin:$PATH
+  ```
+
+  Add the `export` line to your `~/.zshrc` or `~/.bashrc` so it persists across sessions, then re-run `npm install`.
+</Accordion>
+
+<Accordion title="'node' is not recognized / wrong Node.js version">
+  CryptoMCP requires Node.js 18 or higher. If `node --version` returns a version below 18, or the command is not found, install the correct version using nvm:
+
+  ```bash
+  # Install nvm (macOS / Linux)
+  curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+
+  # Reload your shell, then install and use Node 20 LTS
+  nvm install 20
+  nvm use 20
+  node --version   # Should print v20.x.x
+  ```
+
+  On Windows, use [nvm-windows](https://github.com/coreybutler/nvm-windows) instead.
+</Accordion>
+
+<Accordion title="Server exits immediately after starting">
+  If the process exits without printing `Ready ✓`, the most common causes are:
+
+  1. **Missing `.env` file** — make sure you copied `.env.example` to `.env`. CryptoMCP will not start without the config file present.
+  2. **Syntax error in `.env`** — values must not be quoted. Use `KEY=value`, not `KEY="value"`.
+  3. **Port conflict** — if you changed `MCP_SERVER_PORT` and that port is already in use, choose a different port or stop the conflicting process.
+
+  Run with `LOG_LEVEL=debug` to see the full error before the process exits:
+
+  ```bash
+  LOG_LEVEL=debug node index.js
+  ```
+</Accordion>
+
+<Accordion title="'Cannot find module' error on startup">
+  This usually means dependencies were not installed, or were installed for a different Node.js version. Delete `node_modules` and reinstall:
+
+  ```bash
+  rm -rf node_modules package-lock.json
+  npm install
+  ```
+
+  If you recently switched Node.js versions with nvm, native add-ons may need to be rebuilt:
+
+  ```bash
+  npm rebuild
+  ```
+</Accordion>
+
+## Next steps
+
+With CryptoMCP installed and running, continue to the configuration guide to add more API keys and tune provider behaviour:
+
+<CardGroup cols={2}>
+  <Card title="Configure API Keys" icon="key" href="/configuration/api-keys">
+    Add provider keys, configure rate-limit handling, and set up provider fallbacks.
+  </Card>
+  <Card title="Quick Start" icon="rocket" href="/quickstart">
+    Connect your AI client and make your first live crypto query.
+  </Card>
+</CardGroup>

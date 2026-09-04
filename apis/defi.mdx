@@ -1,0 +1,133 @@
+---
+title: "Fetching DeFi Protocol and Liquidity Pool Data"
+sidebarTitle: "DeFi"
+description: "Access liquidity pool stats, token pair reserves, and yield data from popular DeFi protocols using the get_defi_pool tool in CryptoMCP."
+---
+
+CryptoMCP gives you direct access to DeFi liquidity pool data across major decentralized exchanges. With the `get_defi_pool` tool, you can retrieve real-time stats for any token pair — including total liquidity, 24-hour trading volume, fee tiers, and estimated APR — without navigating multiple protocol dashboards or writing custom subgraph queries.
+
+## `get_defi_pool`
+
+The `get_defi_pool` tool fetches the current state of a liquidity pool for a given token pair on a specified DEX protocol and chain. Use it to research yield opportunities, monitor pool health, or compare liquidity depth across protocols.
+
+### Parameters
+
+<ParamField query="pair" type="string" required>
+  The token pair to look up, formatted as `"TOKEN0/TOKEN1"` (e.g., `"ETH/USDC"`, `"BTC/USDT"`, `"MATIC/DAI"`).
+</ParamField>
+
+<ParamField query="protocol" type="string" default="uniswap-v3">
+  The DEX protocol to query. Accepted values include `"uniswap-v2"`, `"uniswap-v3"`, `"sushiswap"`, and `"pancakeswap"`. See [Supported Protocols](#supported-protocols) for the full list.
+</ParamField>
+
+<ParamField query="chain" type="string" default="ethereum">
+  The blockchain network where the pool is deployed. Accepted values include `"ethereum"`, `"polygon"`, `"bsc"`, `"arbitrum"`, and `"optimism"`.
+</ParamField>
+
+### Example
+
+Ask your AI **"What is the liquidity and APR of the ETH/USDC Uniswap V3 pool?"** and CryptoMCP calls:
+
+```json
+{
+  "tool": "get_defi_pool",
+  "parameters": {
+    "pair": "ETH/USDC",
+    "protocol": "uniswap-v3",
+    "chain": "ethereum"
+  }
+}
+```
+
+The tool returns:
+
+```json
+{
+  "pool_address": "0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640",
+  "token0": {
+    "symbol": "ETH",
+    "contract": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+  },
+  "token1": {
+    "symbol": "USDC",
+    "contract": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+  },
+  "liquidity": 284710392.55,
+  "volume_24h": 312840021.78,
+  "fee_tier": 0.05,
+  "apr": 14.23
+}
+```
+
+### Response Fields
+
+<ResponseField name="pool_address" type="string">
+  The on-chain contract address for this liquidity pool.
+</ResponseField>
+
+<ResponseField name="token0" type="object">
+  Details for the first token in the pair.
+
+  - `symbol` — the token's ticker symbol
+  - `contract` — the token's ERC-20 contract address
+</ResponseField>
+
+<ResponseField name="token1" type="object">
+  Details for the second token in the pair.
+
+  - `symbol` — the token's ticker symbol
+  - `contract` — the token's ERC-20 contract address
+</ResponseField>
+
+<ResponseField name="liquidity" type="number">
+  Total value locked (TVL) in the pool, denominated in USD.
+</ResponseField>
+
+<ResponseField name="volume_24h" type="number">
+  Total trading volume through the pool over the past 24 hours, denominated in USD.
+</ResponseField>
+
+<ResponseField name="fee_tier" type="number">
+  The pool's swap fee percentage (e.g., `0.05` represents 0.05%). Fee tiers vary by protocol and pool.
+</ResponseField>
+
+<ResponseField name="apr" type="number">
+  Estimated annualized yield for liquidity providers, calculated from 24-hour fee revenue relative to total liquidity. Expressed as a percentage.
+</ResponseField>
+
+---
+
+## Natural Language Queries to Try
+
+You can ask your AI client about DeFi pools using plain, conversational language. Here are some examples to get you started:
+
+- *"What is the liquidity and APR of the ETH/USDC Uniswap V3 pool?"*
+- *"Compare the ETH/USDT pool on Uniswap V3 vs SushiSwap."*
+- *"What's the 24-hour volume for the MATIC/DAI pool on Polygon?"*
+- *"Which fee tier does the ETH/USDC Uniswap pool use?"*
+- *"Show me the pool address for BTC/ETH on SushiSwap."*
+
+---
+
+## Supported Protocols
+
+CryptoMCP supports the following DEX protocols. Use the **Protocol ID** value for the `protocol` parameter:
+
+| Protocol         | Protocol ID      | Supported Chains                     |
+|------------------|------------------|--------------------------------------|
+| Uniswap V2       | `uniswap-v2`     | Ethereum, Polygon, Arbitrum          |
+| Uniswap V3       | `uniswap-v3`     | Ethereum, Polygon, Arbitrum, Optimism|
+| SushiSwap        | `sushiswap`      | Ethereum, Polygon, BSC, Arbitrum     |
+| PancakeSwap      | `pancakeswap`    | BSC, Ethereum                        |
+
+Additional protocols may be available on newer CryptoMCP plans. Reach out to support if you need a protocol not listed here.
+
+---
+
+<Info>
+  Pool data is sourced directly from on-chain smart contracts and indexed via DEX subgraphs (such as The Graph). Liquidity, volume, and APR figures reflect real-time or near-real-time state — typically updated within one block of the chain's latest confirmed state. APR estimates are based on trailing 24-hour fee data and do not account for impermanent loss.
+</Info>
+
+<Tip>
+  To get the most useful pool comparison, try asking: *"What is the liquidity and APR of the ETH/USDC Uniswap V3 pool?"* — your AI client will call `get_defi_pool` and summarize the results in plain language, including whether the pool is well-capitalized and how the yield compares to typical DeFi benchmarks.
+</Tip>

@@ -1,0 +1,113 @@
+---
+title: "Frequently Asked Questions About CryptoMCP"
+sidebarTitle: "FAQ"
+description: "Answers to common questions about CryptoMCP setup, supported blockchains, API key requirements, and how MCP tool calls work."
+---
+
+Whether you're evaluating CryptoMCP for the first time or you've been using it for a while and have a specific question, this page covers the most common things users ask. If you don't find your answer here, check the [Troubleshooting](/help/troubleshooting) guide or open a GitHub issue.
+
+<Accordion title="What AI clients does CryptoMCP support?">
+
+CryptoMCP implements the [Model Context Protocol](https://modelcontextprotocol.io) (MCP), an open standard for exposing tools to AI assistants. Any MCP-aware client can connect to it. Clients that work today include:
+
+- **Claude Desktop** (Anthropic) — add CryptoMCP to your `claude_desktop_config.json`
+- **Cursor** — configure it as an MCP server in Cursor's settings
+- **Continue** — add it to your `config.json` under `mcpServers`
+- Any custom agent or application built with an MCP client SDK (TypeScript, Python, etc.)
+
+Because MCP is an open protocol, new client support is growing quickly. If your preferred AI tool supports MCP, CryptoMCP will work with it.
+
+</Accordion>
+
+<Accordion title="Do I need all API keys to get started?">
+
+No. Only two keys are strictly required before the server will start:
+
+- `COINGECKO_API_KEY` — powers price and market data tools
+- `ETHERSCAN_API_KEY` — powers Ethereum on-chain tools
+
+The keys for Polygonscan, BscScan, and CryptoPanic are optional. If you omit them, the tools that rely on those providers (`get_wallet_balance` on Polygon/BSC, `get_news`, etc.) will return a clear error message indicating which key is missing, but all other tools will continue to work normally.
+
+Add the remaining keys whenever you need the functionality they unlock — there's no obligation to set them all up at once.
+
+</Accordion>
+
+<Accordion title="Which blockchains are supported?">
+
+CryptoMCP currently supports the following networks:
+
+| Network | Chain ID | Tools Supported |
+|---|---|---|
+| Ethereum Mainnet | 1 | `get_wallet_balance`, `get_transaction`, `get_block`, `get_gas` |
+| Polygon (MATIC) | 137 | `get_wallet_balance`, `get_transaction`, `get_block`, `get_gas` |
+| BNB Smart Chain | 56 | `get_wallet_balance`, `get_transaction`, `get_block`, `get_gas` |
+
+Market data tools (`get_price`, `get_market_data`, `list_tokens`) are chain-agnostic — they pull from CoinGecko, which aggregates prices across all exchanges regardless of chain.
+
+Support for additional EVM-compatible chains (Arbitrum, Optimism, Base, Avalanche) is on the roadmap. Watch the changelog for updates.
+
+</Accordion>
+
+<Accordion title="Is my wallet private key ever used or stored?">
+
+No. CryptoMCP is a **read-only** tool server. It queries public blockchain data using wallet addresses (which are public identifiers), never private keys or seed phrases.
+
+- You pass in a public wallet address (e.g., `0xAbC...`) to `get_wallet_balance`
+- CryptoMCP queries the relevant block explorer API for balances associated with that address
+- No signing, no transactions, no private key required at any point
+
+Never share your private key or seed phrase with any software, including CryptoMCP. You should never need to.
+
+</Accordion>
+
+<Accordion title="How do I know which tool is being called?">
+
+When your AI client invokes a CryptoMCP tool, the MCP protocol surfaces the tool name and its input parameters before the call is made. In most clients you'll see this as a tool-use block in the conversation — for example, Claude Desktop shows a collapsible **Tool Use** section with the tool name and arguments.
+
+You can also watch the CryptoMCP server logs in real time. With the default `LOG_LEVEL=info` setting, every tool invocation is logged:
+
+```
+[info] Tool called: get_price {"tokens":["bitcoin","ethereum"]}
+[info] Tool called: get_wallet_balance {"address":"0xAbC...","chain":"ethereum"}
+```
+
+Set `LOG_LEVEL=debug` in your `.env` file for even more detail, including raw API request and response bodies.
+
+</Accordion>
+
+<Accordion title="Can I add my own custom tools?">
+
+Yes. CryptoMCP is designed to be extensible. To add a custom tool:
+
+1. Create a new file in the `src/tools/` directory following the existing tool pattern.
+2. Define your tool's name, description, and JSON Schema input parameters.
+3. Implement the handler function that calls your data source and returns a structured result.
+4. Register the tool in `src/tools/index.ts`.
+
+Your tool will automatically appear in the MCP tool list and be available to any connected AI client. See the [MCP Tools Reference](/reference/tools/price) for examples of how tools are structured.
+
+</Accordion>
+
+<Accordion title="What happens if an API rate limit is hit?">
+
+CryptoMCP handles rate limit responses (HTTP 429) from upstream providers gracefully:
+
+- The tool returns an error result with a human-readable message such as `"Rate limit reached for CoinGecko. Retry after 60 seconds."`
+- The error is surfaced to your AI client so it can inform you and optionally retry
+- CryptoMCP does **not** silently retry in the background on your behalf, to avoid burning through your quota further
+
+To reduce how often you hit rate limits:
+
+- Increase the relevant `CACHE_TTL_*` values in your `.env` so repeated identical queries are served from cache instead of hitting the API
+- Provide a private RPC endpoint via `ETHEREUM_RPC_URL` / `POLYGON_RPC_URL` / `BSC_RPC_URL` to bypass shared public endpoint limits
+- Upgrade to a paid API plan for the provider you're hitting most frequently
+
+</Accordion>
+
+<Accordion title="Is CryptoMCP free to use?">
+
+CryptoMCP itself is free and open-source software. You can run it locally, self-host it, and modify it without any licensing cost.
+
+The underlying data provider APIs (CoinGecko, Etherscan, etc.) are also free at their base tiers, which is sufficient for personal use and development. If you scale up to a production workload with high request volumes, you may want to subscribe to a paid plan from one or more of those providers — but that decision is entirely between you and them, and is unrelated to CryptoMCP itself.
+
+</Accordion>

@@ -1,0 +1,83 @@
+---
+title: "Authentication and API Keys in CryptoMCP"
+sidebarTitle: "Authentication"
+description: "CryptoMCP uses provider API keys stored in your local .env file. Learn which keys are required and how they are passed to each crypto data provider."
+---
+
+CryptoMCP authenticates with crypto data providers on your behalf, so your AI assistant never has to handle credentials directly. You supply your API keys once — in a local `.env` file — and the CryptoMCP server reads them at startup, injects them into every outbound request, and keeps them entirely hidden from the AI client. Your keys never travel over the MCP connection.
+
+## How Key Management Works
+
+When CryptoMCP starts, it reads environment variables from your `.env` file and stores them in memory for the lifetime of the server process. Every time a tool call requires a provider API, the server attaches the relevant key to the outbound HTTP request as a header or query parameter, depending on that provider's requirements. The AI client — whether that is Claude Desktop, Cursor, or any other MCP-compatible assistant — only ever receives the structured tool response, not the credentials used to fetch it.
+
+```
+.env file (local, never shared)
+  → CryptoMCP server (reads keys at startup)
+    → Outbound API request (key injected server-side)
+      → Provider response (returned to server)
+        → Structured JSON (returned to AI client — no keys)
+```
+
+This architecture means you can connect untrusted or third-party AI clients to CryptoMCP without exposing your provider credentials.
+
+## Required API Keys
+
+Different CryptoMCP tools draw on different data providers. The table below lists the environment variable name for each key, the provider it authenticates, and where to obtain it.
+
+| Environment Variable | Provider | Used By | Get Your Key |
+|---|---|---|---|
+| `COINGECKO_API_KEY` | CoinGecko | `get_price`, `get_market_data`, `list_tokens` | [coingecko.com/api](https://www.coingecko.com/api/documentation) |
+| `ETHERSCAN_API_KEY` | Etherscan | `get_wallet_balance`, `get_transaction`, `get_block` | [etherscan.io/apis](https://etherscan.io/apis) |
+| `INFURA_API_KEY` | Infura (JSON-RPC) | `get_gas`, `get_block` | [infura.io](https://infura.io) |
+| `DEFILLAMA_API_KEY` | DefiLlama | `get_defi_pool` | [defillama.com](https://defillama.com) |
+| `CRYPTONEWS_API_KEY` | CryptoPanic / News provider | `get_news` | Your news provider's dashboard |
+
+<Info>
+  Not all tools require every key. CryptoMCP only contacts a provider when a tool that depends on it is invoked. If you only need price data, for example, you can start with just `COINGECKO_API_KEY` and add others as you need them.
+</Info>
+
+## Setting Up Your `.env` File
+
+Create a `.env` file in the root directory of your CryptoMCP installation and add your keys in the format below. Replace each placeholder with your actual key value.
+
+```bash
+# .env — CryptoMCP provider credentials
+
+COINGECKO_API_KEY=your_coingecko_key_here
+ETHERSCAN_API_KEY=your_etherscan_key_here
+INFURA_API_KEY=your_infura_key_here
+DEFILLAMA_API_KEY=your_defillama_key_here
+CRYPTONEWS_API_KEY=your_news_key_here
+```
+
+Save the file, then start or restart CryptoMCP. The server loads the keys on boot — no restart is needed when you query tools, only when you add or change keys.
+
+<Warning>
+  Never commit your `.env` file to version control. Add `.env` to your `.gitignore` immediately. If a key is accidentally exposed, rotate it from your provider's dashboard right away and update your `.env` with the new value.
+</Warning>
+
+## What Happens When a Key Is Missing
+
+CryptoMCP performs a graceful degradation when a required key is absent. Rather than crashing the server or silently returning empty data, the relevant tool returns a structured error that your AI client can read and relay to you.
+
+```json
+{
+  "error": "missing_credentials",
+  "tool": "get_news",
+  "message": "CRYPTONEWS_API_KEY is not set. Add this key to your .env file to enable the get_news tool.",
+  "docs": "https://docs.cryptomcp.com/configuration/api-keys"
+}
+```
+
+All other tools that do not depend on the missing key continue to work normally. You can run CryptoMCP with only a subset of keys configured and expand coverage by adding more keys over time.
+
+<Accordion title="Troubleshooting: key set but tool still errors">
+  If you have added a key to `.env` but the tool still returns a credentials error, work through the following checks:
+
+  1. **Confirm the file name** — the file must be named exactly `.env` (with a leading dot) and placed in the CryptoMCP root directory.
+  2. **Check for extra whitespace** — keys must follow the `KEY=value` format with no spaces around the `=` sign and no trailing spaces after the value.
+  3. **Restart the server** — CryptoMCP reads `.env` only at startup. A running server will not pick up changes until you restart it.
+  4. **Verify the key is active** — log in to your provider dashboard and confirm the key has not expired or been revoked.
+</Accordion>
+
+For a full list of provider-specific configuration options — including optional keys, rate-limit tiers, and multi-chain RPC endpoints — see the [API Keys configuration guide](/configuration/api-keys).

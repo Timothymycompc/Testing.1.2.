@@ -1,0 +1,99 @@
+---
+title: "CryptoMCP MCP Resources Overview"
+sidebarTitle: "Resources"
+description: "MCP resources in CryptoMCP provide your AI assistant with read-only data like supported token lists, chain configs, and provider status without making live API calls."
+---
+
+MCP Resources are static or cached data objects that your AI client reads passively at connection time — think of them as configuration files or reference tables your assistant consults silently in the background. Unlike Tools (which are callable functions that fire live API requests on demand), Resources give the AI the foundational context it needs to answer questions about supported chains, available tokens, and server health without incurring extra round-trips to external data providers.
+
+## Available Resources
+
+CryptoMCP exposes four built-in resources over the `cryptomcp://` URI scheme:
+
+<CardGroup cols={2}>
+  <Card title="cryptomcp://tokens" icon="coins">
+    A complete list of every supported token, including display names, ticker symbols, and contract addresses across all chains.
+  </Card>
+  <Card title="cryptomcp://chains" icon="link">
+    Supported blockchain networks and their configurations — chain IDs, RPC details, native currency symbols, and block explorer URLs.
+  </Card>
+  <Card title="cryptomcp://providers" icon="server">
+    All configured data providers (e.g. CoinGecko, Etherscan, DefiLlama) along with their current health status and rate-limit headroom.
+  </Card>
+  <Card title="cryptomcp://version" icon="tag">
+    The running CryptoMCP server version, build timestamp, and a manifest of every tool that was successfully loaded at startup.
+  </Card>
+</CardGroup>
+
+## How Resources Are Accessed
+
+Your MCP-aware AI client (Claude Desktop, Cursor, or any other compatible client) reads these resources automatically during the connection handshake. The AI uses the data to:
+
+- Resolve token symbols and contract addresses before calling tools like `get_price` or `get_wallet_balance`
+- Validate that a requested chain or provider is actually available before attempting a live query
+- Surface accurate chain names and explorer links in formatted responses
+
+You don't need to do anything special to trigger this — it happens in the background every time a session starts. That said, you can also prompt your AI directly to surface the data:
+
+- *"List all supported chains."*
+- *"What tokens does CryptoMCP support?"*
+- *"Are all data providers online right now?"*
+
+## Example Resource Response
+
+Below is a representative response when your AI client reads `cryptomcp://chains`:
+
+```json
+[
+  {
+    "chainId": 1,
+    "name": "Ethereum",
+    "shortName": "eth",
+    "nativeCurrency": {
+      "symbol": "ETH",
+      "decimals": 18
+    },
+    "rpc": "https://eth.llamarpc.com",
+    "explorer": "https://etherscan.io"
+  },
+  {
+    "chainId": 137,
+    "name": "Polygon",
+    "shortName": "matic",
+    "nativeCurrency": {
+      "symbol": "POL",
+      "decimals": 18
+    },
+    "rpc": "https://polygon.llamarpc.com",
+    "explorer": "https://polygonscan.com"
+  },
+  {
+    "chainId": 42161,
+    "name": "Arbitrum One",
+    "shortName": "arb1",
+    "nativeCurrency": {
+      "symbol": "ETH",
+      "decimals": 18
+    },
+    "rpc": "https://arb1.arbitrum.io/rpc",
+    "explorer": "https://arbiscan.io"
+  },
+  {
+    "chainId": 8453,
+    "name": "Base",
+    "shortName": "base",
+    "nativeCurrency": {
+      "symbol": "ETH",
+      "decimals": 18
+    },
+    "rpc": "https://mainnet.base.org",
+    "explorer": "https://basescan.org"
+  }
+]
+```
+
+Each object includes everything the AI needs to build valid tool calls, format explorer links in responses, and reject requests for unsupported networks before they reach the API layer.
+
+<Note>
+  Resources are read once at client connection time and cached for the duration of the session. If you add a new chain, update a provider API key, or upgrade the server binary, **restart CryptoMCP** so clients pick up the refreshed resource data on their next connection.
+</Note>
