@@ -1,0 +1,63 @@
+---
+title: "Simulate Solana transactions before agents sign them"
+sidebarTitle: "Simulate"
+description: "Dry-run a serialized VersionedTransaction and return success, error, logs, and compute units so agents can preview outcomes before spending SOL."
+openapi: "https://solana-pulse-gateway-1021990235790.us-central1.run.app/openapi.json POST /api/solana/simulate"
+---
+
+The fastest way to lose money on Solana is signing a broken transaction. This endpoint runs your serialized VersionedTransaction against the current state of the network and tells you whether it would succeed, what it would cost in compute, and what logs it would emit, all without paying a fee or touching the chain.
+
+<Note>
+  Paid endpoint. Pass your key in the `x-api-key` header. See [Get an API key](/guides/claim-api-key).
+</Note>
+
+## Why agents use this
+
+- **Zero-cost preview.** Simulation is off-chain. You pay one gateway call, not a transaction fee, to know if the tx works.
+- **Real compute units.** `unitsConsumed` tells you exactly how much CU to request, avoiding both underruns and wasted headroom.
+- **Full log stream.** If simulation fails, `logs` contains the exact error, program, and line that broke it.
+- **Slippage preview.** For swap transactions, simulation reveals what tokens actually move, so you can show the user a real outcome before they approve.
+
+## Use cases
+
+- **Preview slippage in a Discord bot.** User asks the bot to swap. Bot builds the tx, simulates it, and posts "You'll receive 12.4 BONK" instead of "unknown". User approves, then the bot signs.
+- **CI test suite for Solana programs.** Every PR runs a suite of simulated instructions against devnet and asserts on log output.
+- **Agent self-check before signing.** Your autonomous bot built a swap. Simulate first; if `success: false`, retry with different params instead of burning a fee.
+- **Compute unit budget optimization.** Loop: simulate, read `unitsConsumed`, set `computeUnitLimit = unitsConsumed * 1.1`. Cheapest possible fee.
+- **Failure debugging in support tickets.** User sends you a failing signature. Simulate the same tx and read the logs, respond with the exact reason.
+
+## Recipe: safe preview + sign flow
+
+```typescript preview-then-sign.ts
+import { VersionedTransaction } from "@solana/web3.js";
+
+const API_KEY = process.env.API_KEY!;
+const GATEWAY = "https://solana-pulse-gateway-1021990235790.us-central1.run.app";
+
+async function previewThenSign(tx: VersionedTransaction) {
+  const serialized = Buffer.from(tx.serialize()).toString("base64");
+
+  const sim = await fetch(`${GATEWAY}/api/solana/simulate`, {
+    method: "POST",
+    headers: {
+      "x-api-key": API_KEY,
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({ transaction: serialized }),
+  }).then((r) => r.json());
+
+  if (!sim.success) {
+    console.error("Simulation failed:", sim.error);
+    console.error("Logs:", sim.logs);
+    return null;
+  }
+
+  console.log(`Simulation OK, will consume ${sim.unitsConsumed} CU`);
+  // Safe to prompt user for signature and submit...
+  return sim.unitsConsumed;
+}
+```
+
+<Tip>
+  Combine with [Optimal Fee](/api-reference/solana/optimal-fee): simulate to get real `unitsConsumed`, then pull the current fee tier, and submit with a perfectly-sized compute budget.
+</Tip>

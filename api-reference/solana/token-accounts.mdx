@@ -1,0 +1,54 @@
+---
+title: "List every SPL token a Solana wallet holds"
+sidebarTitle: "Token Accounts"
+description: "Enumerate every SPL token account owned by a wallet with mint, decimals, and balance. Powers portfolio views, airdrop filters, and agent self-inventory."
+openapi: "https://solana-pulse-gateway-1021990235790.us-central1.run.app/openapi.json GET /api/solana/token-accounts"
+---
+
+One call, every token the wallet owns. This endpoint queries the SPL Token program for all token accounts owned by a given wallet and returns each account's pubkey, mint, decimals, and balance. Perfect for portfolio views, airdrop eligibility filters, and giving an autonomous agent visibility into its own holdings.
+
+<Note>
+  Paid endpoint. Pass your key in the `x-api-key` header. See [Get an API key](/guides/claim-api-key).
+</Note>
+
+## Why agents use this
+
+- **One call replaces N ATA lookups.** Instead of guessing what tokens a wallet might hold and checking each, list them all.
+- **Balances are already parsed.** No decimal math required, `amount` is already scaled.
+- **Feeds every portfolio feature.** Whatever you're building (dashboard, tax export, airdrop check) starts here.
+- **Agent self-inventory.** Autonomous bots need to know what they hold before deciding what to sell.
+
+## Use cases
+
+- **Wallet portfolio dashboard.** Show all tokens with balances, USD values, and 24h changes. Start here, enrich with price data.
+- **Airdrop eligibility filter.** Loop through candidate wallets, keep only the ones holding your qualifying mint.
+- **Tax export.** Combined with [Transactions](/api-reference/solana/transactions) and [Decode Tx](/api-reference/solana/decode-tx) you get a full labeled activity + holdings snapshot.
+- **Agent "what do I own?" check.** Autonomous swap bot lists its holdings, decides which token to trim to rebalance.
+- **Whitelist verification.** Users prove they hold a token by wallet address; you list holdings and confirm.
+
+## Recipe: filter wallets holding a specific mint
+
+```typescript filter-holders.ts
+const API_KEY = process.env.API_KEY!;
+const GATEWAY = "https://solana-pulse-gateway-1021990235790.us-central1.run.app";
+const TARGET_MINT = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"; // USDC
+
+async function filterHolders(wallets: string[], minAmount = 100) {
+  const results = await Promise.all(
+    wallets.map(async (wallet) => {
+      const res = await fetch(
+        `${GATEWAY}/api/solana/token-accounts?wallet=${wallet}`,
+        { headers: { "x-api-key": API_KEY } },
+      );
+      const data = await res.json();
+      const holding = data.tokens.find((t: any) => t.mint === TARGET_MINT);
+      return holding && holding.amount >= minAmount ? wallet : null;
+    }),
+  );
+  return results.filter(Boolean);
+}
+```
+
+<Tip>
+  Pair with [Token Profile](/api-reference/solana/token-profile) to warn users when one of their holdings has flipped risky (e.g., freeze authority just came online).
+</Tip>

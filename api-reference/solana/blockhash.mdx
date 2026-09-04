@@ -1,0 +1,44 @@
+---
+title: "Get the latest finalized Solana blockhash instantly"
+sidebarTitle: "Blockhash"
+description: "Return the most recent finalized blockhash and its last valid block height for client-side transaction construction. Public endpoint, no API key."
+openapi: "https://solana-pulse-gateway-1021990235790.us-central1.run.app/openapi.json GET /api/solana/blockhash"
+---
+
+Every Solana transaction needs a recent blockhash. This endpoint returns the latest finalized hash plus its `lastValidBlockHeight` so you can build and submit transactions client-side without running your own RPC node. **Free**, no API key required, cheap to call in a loop.
+
+## Why agents use this
+
+- **You need it for every tx.** Any transaction built more than ~90 seconds after the blockhash was fetched will expire. Refresh often.
+- **`lastValidBlockHeight` prevents ghost failures.** Compare against current slot to know if your tx window is still open.
+- **No RPC infra required.** Devs building agents from scratch can construct + submit transactions with just this and a wallet.
+- **Devnet + mainnet from the same endpoint.** Add `?network=devnet` for testing.
+
+## Use cases
+
+- **Client-side tx builder.** Web app or CLI that constructs Solana transactions, fetches blockhash from the gateway, signs locally.
+- **Blockhash refresh in a sniper bot.** Cache blockhash for 30 seconds, then refresh. Never submit an expired tx.
+- **Tx expiry monitor.** Watch `lastValidBlockHeight` on your queued transactions and re-sign the ones nearing expiry.
+- **Onboarding health check.** Users hit blockhash to verify their gateway integration works before committing to a paid plan.
+- **Wallet SDK bootstrap.** Custom mobile wallet? Point it here for blockhash so you don't have to bundle an RPC dependency.
+
+## Recipe: fresh-blockhash cache
+
+```typescript blockhash-cache.ts
+const GATEWAY = "https://solana-pulse-gateway-1021990235790.us-central1.run.app";
+
+let cache: { blockhash: string; lastValidBlockHeight: number; at: number } | null = null;
+
+export async function getFreshBlockhash(maxAgeMs = 30_000) {
+  if (cache && Date.now() - cache.at < maxAgeMs) return cache;
+
+  const res = await fetch(`${GATEWAY}/api/solana/blockhash`);
+  const data = await res.json();
+  cache = { ...data, at: Date.now() };
+  return cache;
+}
+```
+
+<Tip>
+  Free endpoint. Pair with [Optimal Fee](/api-reference/solana/optimal-fee) to build fully-configured transactions with two gateway calls and no RPC of your own.
+</Tip>

@@ -1,0 +1,58 @@
+---
+title: "Fetch recent Solana transaction signatures for any wallet"
+sidebarTitle: "Transactions"
+description: "Return up to 50 recent transaction signatures with slot, block time, and error status. Feed into decode-tx to build a labeled activity feed."
+openapi: "https://solana-pulse-gateway-1021990235790.us-central1.run.app/openapi.json GET /api/solana/transactions"
+---
+
+The first half of "what did this wallet do?" This endpoint returns up to 50 recent signatures for any wallet, each annotated with slot, block time, and whether it succeeded. Feed the signatures into [Decode Tx](/api-reference/solana/decode-tx) to build a full labeled activity feed without touching an RPC node.
+
+<Note>
+  Paid endpoint. Pass your key in the `x-api-key` header. See [Get an API key](/guides/claim-api-key).
+</Note>
+
+## Why agents use this
+
+- **Pagination-free recent history.** One call gets you the freshest N signatures, sorted newest first.
+- **Cheap discovery step.** Combine with `decode-tx` only for the signatures you care about. Don't decode 50 when you need 3.
+- **`err` field tells you at a glance if a tx failed.** Filter to successful ones before decoding.
+- **Perfect for polling.** Every 30 seconds, fetch fresh signatures, diff against last-seen set, decode only the new ones.
+
+## Use cases
+
+- **Discord bot activity feed.** User links wallet, bot polls this every minute and decodes new signatures for a labeled feed.
+- **Wallet activity dashboard.** UI polls this, decodes with [Decode Tx](/api-reference/solana/decode-tx), renders a live feed.
+- **Watched-wallet monitor.** Track whale wallets. Alert when they submit new transactions.
+- **Failed-tx retry loop.** Bot's own signatures come back with `err`? Rebuild and retry.
+- **Tax export foundation.** Loop back through history in batches of 50, decode each, categorize, output CSV.
+
+## Recipe: watch a whale wallet for new activity
+
+```typescript whale-watcher.ts
+const API_KEY = process.env.API_KEY!;
+const GATEWAY = "https://solana-pulse-gateway-1021990235790.us-central1.run.app";
+const WHALE = "Brpc8HoPo1d3Uiyo7kbERnjMqwLJJmbWxtwxHxzar6DU";
+
+const seen = new Set<string>();
+
+async function pollWhale() {
+  const res = await fetch(
+    `${GATEWAY}/api/solana/transactions?wallet=${WHALE}&limit=20`,
+    { headers: { "x-api-key": API_KEY } },
+  );
+  const { transactions } = await res.json();
+
+  const fresh = transactions.filter((t: any) => !seen.has(t.signature));
+  for (const t of fresh) {
+    seen.add(t.signature);
+    console.log(`New whale tx: ${t.signature} at slot ${t.slot}`);
+    // Optionally: decode it, alert Discord, trigger copy-trade, etc.
+  }
+}
+
+setInterval(pollWhale, 30_000);
+```
+
+<Tip>
+  This endpoint returns signatures, not full transaction data. Piping every signature into [Decode Tx](/api-reference/solana/decode-tx) is the standard follow-up.
+</Tip>

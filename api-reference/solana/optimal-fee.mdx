@@ -1,0 +1,56 @@
+---
+title: "Solana priority fees that stop agents overpaying"
+sidebarTitle: "Optimal Fee"
+description: "Sample recent priority fees and return low, medium, and high tier recommendations with plain-English advice so agents pay the right amount every time."
+openapi: "https://solana-pulse-gateway-1021990235790.us-central1.run.app/openapi.json GET /api/solana/optimal-fee"
+---
+
+Solana priority fees change every 10 seconds. Agents that hardcode a fee either fail during congestion or overpay by 3x during quiet periods. This endpoint samples the current network, buckets fees into low/medium/high tiers, and returns plain-English `llm_advice` your model can act on directly.
+
+<Note>
+  Paid endpoint. Pass your key in the `x-api-key` header. See [Get an API key](/guides/claim-api-key).
+</Note>
+
+## Why agents use this
+
+- **Fees move constantly.** A static value is either wasteful or broken. There's no correct hardcoded number.
+- **LLM-native output.** `llm_advice` is a plain sentence like "Network is quiet, use low tier to save 60%." Feed it straight into your prompt.
+- **Three-tier structure matches user intent.** "Get me in fast" (high), "reasonable" (medium), "I'm patient" (low). Match to user preference or agent urgency.
+- **Live congestion signal.** `current_congestion` is a stable classifier your bot can log and monitor over time.
+
+## Use cases
+
+- **Dynamic fee per trade.** Loop your bot: call `optimal-fee`, use the tier that matches urgency, submit. Typical savings: 30-50% versus a fixed conservative fee.
+- **Time mints to congestion dips.** Poll every minute; auto-mint the moment `current_congestion` flips to `LOW`.
+- **CI/monitoring alert.** Slack notification when fees spike above a threshold so ops knows to pause automated batches.
+- **Per-user fee preference in a DEX UI.** Show the three tiers with `description` and `estimated_time` from the response. Users pick, bot executes.
+- **Fee attribution in analytics.** Log the recommended tier at trade time so you can compare theoretical optimum versus what you actually paid.
+
+## Recipe: adaptive fee selection for a trading bot
+
+```typescript adaptive-fee.ts
+const API_KEY = process.env.API_KEY!;
+const GATEWAY = "https://solana-pulse-gateway-1021990235790.us-central1.run.app";
+
+type Urgency = "low" | "medium" | "high";
+
+async function selectPriorityFee(urgency: Urgency = "medium") {
+  const res = await fetch(`${GATEWAY}/api/solana/optimal-fee`, {
+    headers: { "x-api-key": API_KEY },
+  });
+  const { current_congestion, tiers, llm_advice } = await res.json();
+
+  const tier = tiers[urgency];
+  console.log(`Congestion: ${current_congestion}. ${llm_advice}`);
+  console.log(`Using ${urgency}: ${tier.lamports} lamports (${tier.estimated_time})`);
+
+  return tier.lamports;
+}
+
+// In your tx builder:
+const priorityFee = await selectPriorityFee("high"); // sniper mode
+```
+
+<Tip>
+  Combine with [Blockhash](/api-reference/solana/blockhash) to build fully-configured transactions client-side without your own RPC. Two calls, no infra.
+</Tip>

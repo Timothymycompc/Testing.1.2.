@@ -1,71 +1,45 @@
 ---
-title: "CryptoMCP: Crypto & Blockchain APIs for AI Assistants"
+title: "Solana AI Gateway: Zero-Trust API access for AI agents"
 sidebarTitle: "Introduction"
-description: "CryptoMCP is an MCP server that gives your AI assistant live access to crypto prices, on-chain data, DeFi pools, and blockchain analytics."
+description: "Solana AI Gateway is a wallet-authenticated, credit-metered API gateway that gives AI agents safe, processed access to live Solana intelligence."
 ---
 
-CryptoMCP is an MCP (Model Context Protocol) server that bridges your AI client — such as Claude Desktop or Cursor — directly to the world's leading cryptocurrency and blockchain APIs. Instead of copying prices from websites or writing custom integrations, you ask your AI assistant natural-language questions and CryptoMCP handles the API calls, data parsing, and response formatting behind the scenes.
+Solana AI Gateway is a Zero-Trust API layer that authenticates callers with Solana wallet signatures instead of shared secrets, then meters access to a suite of "pain-killer" endpoints designed for AI agents. Instead of raw RPC data, you get processed intelligence: resolved token accounts, security-graded token profiles, congestion-aware fee tiers, and human-readable transaction summaries.
+
+## Why it exists
+
+LLM agents fail on Solana for predictable reasons: they hallucinate addresses, miscalculate decimals, misread program logs, and pay the wrong priority fee. This gateway handles the plumbing server-side so the agent can focus on intent.
 
 <CardGroup cols={2}>
-  <Card title="Quick Start" icon="rocket" href="/quickstart">
-    Install CryptoMCP and make your first crypto query in under five minutes.
+  <Card title="Wallet-based auth" icon="key" href="/authentication">
+    Sign a challenge with your Solana wallet to claim a credit-backed API key. No passwords, no shared secrets.
   </Card>
-  <Card title="MCP Overview" icon="cube" href="/concepts/mcp-overview">
-    Learn how the Model Context Protocol works and why it powers CryptoMCP.
+  <Card title="Agent-ready endpoints" icon="robot" href="/api-reference/introduction">
+    Processed intelligence instead of raw RPC. Address resolution, fee tiers, transaction decoding, and more.
   </Card>
-  <Card title="Crypto APIs" icon="chart-line" href="/apis/market-data">
-    Explore the market data, on-chain, and DeFi APIs CryptoMCP aggregates.
+  <Card title="MCP native" icon="plug" href="/guides/mcp-integration">
+    Ships with an MCP manifest and SSE endpoint so Claude Desktop, Cursor, and other agents discover tools automatically.
   </Card>
-  <Card title="MCP Tool Reference" icon="code" href="/reference/tools/price">
-    Browse every MCP tool exposed by CryptoMCP with full parameter docs.
+  <Card title="Pay per call" icon="coins" href="/concepts/api-keys-and-credits">
+    Pre-paid credits managed on-chain. Keys unlock only after a wallet signature proves ownership.
   </Card>
 </CardGroup>
 
-## What you can do
+## What you get
 
-CryptoMCP exposes a growing set of tools your AI assistant can invoke on your behalf. Once connected, you can ask questions in plain English and receive structured, real-time answers drawn from live blockchain data.
+- **Cryptographic auth.** Ed25519 signature verification with `tweetnacl`. The server never sees a password.
+- **Credit-metered keys.** Balances live in Postgres; the `requirePayment` middleware debits on each paid call.
+- **Processed intelligence.** ATA resolution, honeypot risk scoring, prioritization-fee tiers, transaction categorization.
+- **MCP discovery.** `/.well-known/mcp.json` and `/mcp/sse` let agents self-configure.
+
+## Next steps
 
 <CardGroup cols={2}>
-  <Card title="Live Market Data" icon="arrow-trend-up">
-    Query real-time prices, 24-hour volume, market cap, and percentage changes for any token.
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Claim a key with your wallet and make your first authenticated call in under five minutes.
   </Card>
-  <Card title="On-Chain Analytics" icon="link">
-    Look up transactions, inspect blocks, and trace on-chain activity across supported networks.
-  </Card>
-  <Card title="Wallet Balances" icon="wallet">
-    Fetch native and ERC-20 token balances for any wallet address without exposing private keys.
-  </Card>
-  <Card title="DeFi Protocol Data" icon="droplet">
-    Retrieve liquidity pool statistics, reserve ratios, and trading pair details from major DeFi protocols.
-  </Card>
-  <Card title="Gas Estimates" icon="gauge-high">
-    Get current gas prices and fee estimates before submitting transactions.
-  </Card>
-  <Card title="Crypto News" icon="newspaper">
-    Pull the latest headlines for any coin or keyword to stay on top of market-moving events.
+
+  <Card title="Core concepts" icon="book" href="/concepts/wallet-signatures">
+    How wallet signatures, credits, and the paywall middleware fit together.
   </Card>
 </CardGroup>
-
-## How it works
-
-CryptoMCP runs as a local Node.js process that speaks the Model Context Protocol. Your AI client discovers the server's available tools at startup and calls them automatically whenever you ask a question that requires live data. You never leave your AI client — CryptoMCP fetches, parses, and returns the data inline.
-
-```text
-Your AI Client  ──MCP──►  CryptoMCP Server  ──HTTPS──►  Crypto APIs
-     ▲                           │
-     └───────── structured ──────┘
-                 response
-```
-
-## Supported networks and data sources
-
-CryptoMCP aggregates data from multiple providers so you get broad coverage with a single configuration:
-
-- **Price & market data** — CoinGecko, CoinMarketCap
-- **On-chain data** — Etherscan, Alchemy, QuickNode
-- **DeFi protocols** — Uniswap subgraph, The Graph
-- **News & sentiment** — CryptoPanic, LunarCrush
-
-<Note>
-  CryptoMCP is a learning and exploration project designed to demonstrate how MCP servers can aggregate crypto APIs for AI assistants. It is not intended for production trading systems or financial advice. Always verify critical data against primary sources before making any financial decisions.
-</Note>

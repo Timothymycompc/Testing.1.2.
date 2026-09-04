@@ -1,0 +1,69 @@
+---
+title: "Claim your API key with a Solana wallet signature"
+sidebarTitle: "Claim"
+description: "Verify your wallet's Ed25519 signature of the challenge and receive your API key once. Wallet auth, no email or password required."
+openapi: "https://solana-pulse-gateway-1021990235790.us-central1.run.app/openapi.json POST /api/keys/claim"
+---
+
+The second step in the auth flow. Submit your wallet, the base58 Ed25519 signature of the challenge, and the challenge itself. The gateway verifies the signature and, if you've deposited SOL to the gateway wallet, returns your API key **exactly once**. Store it immediately, it cannot be retrieved again. **Public endpoint**, no existing key required.
+
+## Why agents use this
+
+- **Wallet address IS the identity.** No user table, no email verification. Your pubkey is your account.
+- **One-shot key delivery.** The pending record is deleted the moment the key is issued. Signature can't be reused.
+- **Requires prior SOL deposit.** Payment happens _before_ the key exists. There's no free-trial abuse surface.
+- **Deterministic identity.** Same wallet always maps to the same account. Re-claiming after a loss requires wallet control.
+
+## Use cases
+
+- **Web onboarding flow.** After the Phantom popup, POST here, store the returned `apiKey` in the user's browser and never show it again.
+- **Autonomous agent bootstrap.** Agent funds its own wallet, calls challenge + claim, writes the key to its own secrets store.
+- **Team-key provisioning script.** Ops runs a script that funds a service wallet, claims a key, injects into k8s secrets.
+- **Key rotation for compromised agents.** Detect leak, deposit new SOL, re-run challenge + claim from a fresh wallet, decommission the old one.
+- **CLI setup.** `mint-solana-key` command runs the flow interactively and writes the key to `~/.solana-gateway/config`.
+
+## Recipe: Node.js claim script
+
+```typescript claim-key.ts
+import bs58 from "bs58";
+import nacl from "tweetnacl";
+import { Keypair } from "@solana/web3.js";
+
+const GATEWAY = "https://solana-pulse-gateway-1021990235790.us-central1.run.app";
+
+async function claimKey(keypair: Keypair) {
+  // 1. Get challenge
+  const { challenge } = await fetch(`${GATEWAY}/api/keys/challenge`).then((r) =>
+    r.json(),
+  );
+
+  // 2. Sign it
+  const message = new TextEncoder().encode(challenge);
+  const sig = nacl.sign.detached(message, keypair.secretKey);
+  const signature = bs58.encode(sig);
+
+  // 3. Claim
+  const res = await fetch(`${GATEWAY}/api/keys/claim`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      wallet: keypair.publicKey.toBase58(),
+      signature,
+      challenge,
+    }),
+  });
+
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error);
+  console.log("Your API key (save now, never shown again):", data.apiKey);
+  return data.apiKey;
+}
+```
+
+<Warning>
+  The key is returned **once**. If you lose it, you'll need to fund a new wallet and repeat the challenge + claim flow with fresh SOL. Store it securely on first receipt.
+</Warning>
+
+<Note>
+  You must deposit at least the credit threshold to the gateway wallet `Brpc8HoPo1d3Uiyo7kbERnjMqwLJJmbWxtwxHxzar6DU` **before** calling claim, otherwise you'll get a 404.
+</Note>

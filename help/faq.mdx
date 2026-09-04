@@ -1,113 +1,41 @@
 ---
-title: "CryptoMCP FAQ: Common Questions About Setup and Use"
+title: "FAQ: Solana AI Gateway wallet auth, credits, and MCP"
 sidebarTitle: "FAQ"
-description: "Answers to common questions about CryptoMCP setup, supported blockchains, API key requirements, rate limits, and how MCP tool calls work in practice."
+description: "Quick answers about wallet sign-in, devnet support, credit top-ups, API key sharing, key rotation, private key handling, network defaults, and MCP discovery for Solana AI Gateway."
 ---
 
-Whether you're evaluating CryptoMCP for the first time or you've been using it for a while and have a specific question, this page covers the most common things users ask. If you don't find your answer here, check the [Troubleshooting](/help/troubleshooting) guide or open a GitHub issue.
+Get fast answers to the most common questions about Solana AI Gateway authentication, billing, endpoints, and MCP integration. Each answer is self-contained and links to related docs where available.
 
-<Accordion title="What AI clients does CryptoMCP support?">
+<AccordionGroup>
+  <Accordion title="Do I need Phantom to authenticate?">
+    No. Solana AI Gateway uses standard Ed25519 signature verification via tweetnacl, so any wallet that can sign a hex challenge and return a base58 signature works. Phantom, Solflare, Backpack, and CLI tools are all compatible. The only requirement is that you control the private key for the wallet you claim the API key with.
+  </Accordion>
 
-CryptoMCP implements the [Model Context Protocol](https://modelcontextprotocol.io) (MCP), an open standard for exposing tools to AI assistants. Any MCP-aware client can connect to it. Clients that work today include:
+  <Accordion title="Can I use devnet?">
+    Yes. Every paid endpoint accepts a `network` query parameter. Set it to `devnet` to route requests through the devnet cluster. If you omit the parameter, the gateway defaults to `mainnet-beta`. Public endpoints such as balance and blockhash also support `devnet`.
+  </Accordion>
 
-- **Claude Desktop** (Anthropic) — add CryptoMCP to your `claude_desktop_config.json`
-- **Cursor** — configure it as an MCP server in Cursor's settings
-- **Continue** — add it to your `config.json` under `mcpServers`
-- Any custom agent or application built with an MCP client SDK (TypeScript, Python, etc.)
+  <Accordion title="What happens when I run out of credits?">
+    Paid endpoints return a `402 Payment Required` response when your API key has no remaining free calls and its credit balance is too low to cover the per-call flat rate of 2,200,000 lamports. To continue using the gateway, send SOL to the gateway wallet (`Brpc8HoPo1d3Uiyo7kbERnjMqwLJJmbWxtwxHxzar6DU`) and claim a new key via `POST /api/keys/claim`.
+  </Accordion>
 
-Because MCP is an open protocol, new client support is growing quickly. If your preferred AI tool supports MCP, CryptoMCP will work with it.
+  <Accordion title="Can I share my API key?">
+    You should not share your API key. The gateway debits credits per call, so anyone with your key can consume your balance. There is no multi-user or team-scoped key model. If you suspect a key has been exposed, rotate it immediately.
+  </Accordion>
 
-</Accordion>
+  <Accordion title="How do I rotate a key?">
+    The gateway does not expose an explicit rotation endpoint. To rotate, send a new SOL top-up from the same wallet. The Helius webhook will create a fresh pending claim, and calling `POST /api/keys/claim` again will issue a new API key tied to the same wallet. You can then stop using the old key.
+  </Accordion>
 
-<Accordion title="Do I need all API keys to get started?">
+  <Accordion title="Does the gateway store my private key?">
+    No. The gateway never sees or stores your private key. Authentication is based on a public-key signature: you sign a server-generated challenge locally, and the gateway verifies the signature against your wallet address using tweetnacl. Only the wallet address and a hashed API key are stored in the database.
+  </Accordion>
 
-No. Only two keys are strictly required before the server will start:
+  <Accordion title="Is mainnet-beta the default network?">
+    Yes. If you omit the `network` query parameter on any endpoint, the gateway automatically routes the request to `mainnet-beta`. Explicitly pass `?network=devnet` whenever you want to target the devnet cluster.
+  </Accordion>
 
-- `COINGECKO_API_KEY` — powers price and market data tools
-- `ETHERSCAN_API_KEY` — powers Ethereum on-chain tools
-
-The keys for Polygonscan, BscScan, and CryptoPanic are optional. If you omit them, the tools that rely on those providers (`get_wallet_balance` on Polygon/BSC, `get_news`, etc.) will return a clear error message indicating which key is missing, but all other tools will continue to work normally.
-
-Add the remaining keys whenever you need the functionality they unlock — there's no obligation to set them all up at once.
-
-</Accordion>
-
-<Accordion title="Which blockchains are supported?">
-
-CryptoMCP currently supports the following networks:
-
-| Network | Chain ID | Tools Supported |
-|---|---|---|
-| Ethereum Mainnet | 1 | `get_wallet_balance`, `get_transaction`, `get_block`, `get_gas` |
-| Polygon (MATIC) | 137 | `get_wallet_balance`, `get_transaction`, `get_block`, `get_gas` |
-| BNB Smart Chain | 56 | `get_wallet_balance`, `get_transaction`, `get_block`, `get_gas` |
-
-Market data tools (`get_price`, `get_market_data`, `list_tokens`) are chain-agnostic — they pull from CoinGecko, which aggregates prices across all exchanges regardless of chain.
-
-Support for additional EVM-compatible chains (Arbitrum, Optimism, Base, Avalanche) is on the roadmap. Watch the changelog for updates.
-
-</Accordion>
-
-<Accordion title="Is my wallet private key ever used or stored?">
-
-No. CryptoMCP is a **read-only** tool server. It queries public blockchain data using wallet addresses (which are public identifiers), never private keys or seed phrases.
-
-- You pass in a public wallet address (e.g., `0xAbC...`) to `get_wallet_balance`
-- CryptoMCP queries the relevant block explorer API for balances associated with that address
-- No signing, no transactions, no private key required at any point
-
-Never share your private key or seed phrase with any software, including CryptoMCP. You should never need to.
-
-</Accordion>
-
-<Accordion title="How do I know which tool is being called?">
-
-When your AI client invokes a CryptoMCP tool, the MCP protocol surfaces the tool name and its input parameters before the call is made. In most clients you'll see this as a tool-use block in the conversation — for example, Claude Desktop shows a collapsible **Tool Use** section with the tool name and arguments.
-
-You can also watch the CryptoMCP server logs in real time. With the default `LOG_LEVEL=info` setting, every tool invocation is logged:
-
-```
-[info] Tool called: get_price {"tokens":["bitcoin","ethereum"]}
-[info] Tool called: get_wallet_balance {"address":"0xAbC...","chain":"ethereum"}
-```
-
-Set `LOG_LEVEL=debug` in your `.env` file for even more detail, including raw API request and response bodies.
-
-</Accordion>
-
-<Accordion title="Can I add my own custom tools?">
-
-Yes. CryptoMCP is open-source and designed to be extensible, so you can add tools that call any data source you like. The general process is:
-
-1. **Fork or clone the CryptoMCP repository** and install dependencies.
-2. **Create a new tool module** following the same structure as the existing built-in tools — define a name, a plain-English description, and the JSON Schema for its input parameters.
-3. **Implement the handler** that fetches data from your chosen source and returns a structured result.
-4. **Register your tool** in the server’s tool index so it is automatically advertised to connected AI clients.
-
-Once registered, your tool appears alongside the built-in tools in any MCP-aware client. See the [MCP Tools Reference](/reference/tools/price) for worked examples of tool structure and parameter definitions.
-
-</Accordion>
-
-<Accordion title="What happens if an API rate limit is hit?">
-
-CryptoMCP handles rate limit responses (HTTP 429) from upstream providers gracefully:
-
-- The tool returns an error result with a human-readable message such as `"Rate limit reached for CoinGecko. Retry after 60 seconds."`
-- The error is surfaced to your AI client so it can inform you and optionally retry
-- CryptoMCP does **not** silently retry in the background on your behalf, to avoid burning through your quota further
-
-To reduce how often you hit rate limits:
-
-- Increase the relevant `CACHE_TTL_*` values in your `.env` so repeated identical queries are served from cache instead of hitting the API
-- Provide a private RPC endpoint via `ETHEREUM_RPC_URL` / `POLYGON_RPC_URL` / `BSC_RPC_URL` to bypass shared public endpoint limits
-- Upgrade to a paid API plan for the provider you're hitting most frequently
-
-</Accordion>
-
-<Accordion title="Is CryptoMCP free to use?">
-
-CryptoMCP itself is free and open-source software. You can run it locally, self-host it, and modify it without any licensing cost.
-
-The underlying data provider APIs (CoinGecko, Etherscan, etc.) are also free at their base tiers, which is sufficient for personal use and development. If you scale up to a production workload with high request volumes, you may want to subscribe to a paid plan from one or more of those providers — but that decision is entirely between you and them, and is unrelated to CryptoMCP itself.
-
-</Accordion>
+  <Accordion title="How does MCP discovery work?">
+    The gateway exposes a Model Context Protocol (MCP) manifest at `GET /.well-known/mcp.json`. The manifest lists the server name, version, capabilities, available tools, and the SSE endpoint (`/mcp/sse`). An MCP client fetches the manifest, opens an SSE connection to receive a `sessionId`, and then posts messages to `POST /mcp/messages?sessionId=<id>`. This lets LLM agents discover and invoke gateway tools without hardcoding endpoint URLs.
+  </Accordion>
+</AccordionGroup>

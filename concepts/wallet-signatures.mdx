@@ -1,0 +1,78 @@
+---
+title: "Wallet Signatures: How Solana AI Gateway Authenticates You"
+sidebarTitle: "Wallet Signatures"
+description: "Learn how Solana AI Gateway uses Ed25519 challenge-response wallet signatures instead of passwords, and how to sign a challenge from your client."
+---
+
+Solana AI Gateway never asks for a password. Instead, it proves you own a wallet by issuing a cryptographic challenge that you sign with your private key. The server verifies the signature on every claim using tweetnacl, and only then releases your API key. This page explains the challenge-response flow, why it is safer than shared secrets, and how to implement it in your client.
+
+## Challenge-response flow
+
+<Steps>
+  <Step title="Request a challenge">
+    Call `GET /api/keys/challenge`. The server returns a random 32-byte nonce as a hex string:
+
+    ```json
+    { "challenge": "a1b2c3d4..." }
+    ```
+  </Step>
+  <Step title="Sign the challenge">
+    Sign the raw challenge bytes with your Solana wallet's private key. The signature must be an Ed25519 detached signature.
+  </Step>
+  <Step title="Claim your key">
+    POST to `/api/keys/claim` with your wallet address, the base58-encoded signature, and the original challenge. If the signature is valid, the server returns your API key.
+  </Step>
+</Steps>
+
+## Why this beats shared API keys
+
+Traditional API services email you a static key. If that key leaks, anyone can drain your credits. Solana AI Gateway flips the model: the key is stored server-side in a pending state, and the only way to unlock it is to prove wallet ownership with an on-chain-valid signature. Even if an attacker intercepts the challenge, they cannot forge the Ed25519 signature without your private key.
+
+## Server-side verification
+
+The gateway runs the following check using tweetnacl:
+
+```typescript
+const pubKey = new PublicKey(wallet).toBuffer();
+const sig = bs58.decode(signature);
+const msg = Buffer.from(challenge);
+
+const isValid = nacl.sign.detached.verify(msg, sig, pubKey);
+```
+
+If `isValid` is false, the server responds with HTTP 401 and the message `Invalid signature`. No key is released, and the pending claim remains intact.
+
+## Client signing example
+
+Here is a minimal TypeScript snippet that fetches a challenge, signs it with the Solana web3.js `Keypair`, and base58-encodes the signature for the claim request:
+
+```typescript
+import { Keypair } from "@solana/web3.js";
+import nacl from "tweetnacl";
+import bs58 from "bs58";
+
+async function claimKey(wallet: Keypair) {
+  const res = await fetch("https://gateway.example.com/api/keys/challenge");
+  const { challenge } = await res.json();
+
+  const message = Buffer.from(challenge, "hex");
+  const signature = nacl.sign.detached(message, wallet.secretKey);
+  const signatureBase58 = bs58.encode(signature);
+
+  const claim = await fetch("https://gateway.example.com/api/keys/claim", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      wallet: wallet.publicKey.toBase58(),
+      signature: signatureBase58,
+      challenge,
+    }),
+  });
+
+  return claim.json(); // { apiKey: "...", message: "..." }
+}
+```
+
+<Warning>
+  A 401 response means the signature did not verify. Double-check that you signed the raw hex challenge bytes (not the hex string itself) and that the wallet address matches the keypair used to sign.
+</Warning>

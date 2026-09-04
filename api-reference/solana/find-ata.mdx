@@ -1,0 +1,54 @@
+---
+title: "Derive Solana ATAs without hallucination"
+sidebarTitle: "Find ATA"
+description: "Deterministically derive an Associated Token Account for a wallet and mint, plus a live exists flag, so agents stop inventing wrong token addresses."
+openapi: "https://solana-pulse-gateway-1021990235790.us-central1.run.app/openapi.json GET /api/solana/find-ata"
+---
+
+Associated Token Accounts are the #1 hallucination LLMs make on Solana. The derivation combines the owner, mint, and SPL Token program with a PDA hash. Agents constantly guess. This endpoint returns the correct ATA every time, plus an `exists` flag so you know whether it needs to be created before you can send tokens to it.
+
+<Note>
+  Paid endpoint. Pass your key in the `x-api-key` header. See [Get an API key](/guides/claim-api-key).
+</Note>
+
+## Why agents use this
+
+- **LLM guesses are wrong most of the time.** The ATA derivation isn't obvious, and models trained on general web data confidently produce garbage addresses.
+- **`exists: false` saves you a failed transaction.** Sending SPL tokens to a non-existent ATA fails with a cryptic error. Check first, create the ATA if needed, then send.
+- **Batch-friendly.** Cheap enough to call across hundreds of wallets when running eligibility checks.
+
+## Use cases
+
+- **Airdrop pre-flight for 500 wallets.** Loop through your list, call `find-ata` for each `(wallet, mint)` pair, and only air-drop to wallets whose ATA already exists (or fund a create instruction where it doesn't).
+- **Pre-trade ATA verification.** Before your agent builds a Jupiter swap, confirm the destination ATA exists so the swap doesn't fail on the first hop.
+- **Wallet UI "receive" address.** Show the exact ATA a user should share to receive a specific SPL token, without asking them to trust the LLM's answer.
+- **MCP tool for Claude Desktop.** Users type "what's my USDC address?" and Claude calls this instead of hallucinating.
+- **Multi-token dashboard.** Given one wallet and a list of tracked mints, resolve every ATA in parallel for a live balance grid.
+
+## Recipe: safe airdrop eligibility check
+
+```typescript airdrop-check.ts
+const API_KEY = process.env.API_KEY!;
+const GATEWAY = "https://solana-pulse-gateway-1021990235790.us-central1.run.app";
+const USDC_MINT = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
+
+async function checkEligibility(wallets: string[]) {
+  const results = await Promise.all(
+    wallets.map(async (wallet) => {
+      const url = `${GATEWAY}/api/solana/find-ata?wallet=${wallet}&mint=${USDC_MINT}`;
+      const res = await fetch(url, { headers: { "x-api-key": API_KEY } });
+      const data = await res.json();
+      return { wallet, ata: data.ataAddress, ready: data.exists };
+    }),
+  );
+
+  const ready = results.filter((r) => r.ready);
+  const needsCreate = results.filter((r) => !r.ready);
+  console.log(`${ready.length} ready, ${needsCreate.length} need ATA creation`);
+  return { ready, needsCreate };
+}
+```
+
+<Tip>
+  Pair with [Token Profile](/api-reference/solana/token-profile) to reject the mint entirely if it looks like a honeypot before you compute a single ATA.
+</Tip>

@@ -1,0 +1,67 @@
+---
+title: "Turn Solana signatures into agent-readable summaries"
+sidebarTitle: "Decode Tx"
+description: "Fetch any transaction and return a category, human-readable summary, and raw logs so agents can audit, label, and monitor on-chain activity."
+openapi: "https://solana-pulse-gateway-1021990235790.us-central1.run.app/openapi.json GET /api/solana/decode-tx"
+---
+
+A Solana transaction signature is opaque. Even fetching the raw transaction gives you a wall of instructions and program IDs that no LLM can reliably interpret. This endpoint returns a category (Swap, MemeCoin, Transfer), a plain-English summary, and the raw logs so your agent can decide what happened without hallucinating.
+
+<Note>
+  Paid endpoint. Pass your key in the `x-api-key` header. See [Get an API key](/guides/claim-api-key).
+</Note>
+
+<Info>
+  The current classifier uses log-substring heuristics (Jupiter program IDs, pump.fun markers, system-program transfer patterns). It's fast and accurate for common cases. Complex composed transactions may fall back to `Transfer`.
+</Info>
+
+## Why agents use this
+
+- **Logs alone confuse LLMs.** Raw program invocations look like gibberish. A category label turns "what is this?" into an if-statement.
+- **Audit trail for autonomous agents.** Your bot signed a tx it built. Decode confirms it did what it intended.
+- **Human-readable summaries for user-facing UI.** No user wants to see `Program log: Instruction: Route`.
+- **Post-mortem debugging.** When a tx failed, the `raw_logs` + summary tell you why without opening Solscan.
+
+## Use cases
+
+- **Auto-label wallet history for taxes.** Loop through `transactions` output, decode each, group by category, export to your accountant.
+- **Agent self-check.** "I built a swap. Does the on-chain result confirm it as a Swap?" If category comes back `Transfer`, something went wrong.
+- **Discord bot activity feed.** User links their wallet, bot decodes new signatures every minute and posts "Bought BONK via Jupiter" instead of raw hashes.
+- **Suspicious activity monitor.** Flag `MemeCoin` category on a treasury wallet that should never touch memes.
+- **Support ticket enrichment.** User sends "my transaction did X, why?" Paste the signature, decode, respond with confidence.
+
+## Recipe: labeled activity feed for a Discord bot
+
+```typescript activity-feed.ts
+const API_KEY = process.env.API_KEY!;
+const GATEWAY = "https://solana-pulse-gateway-1021990235790.us-central1.run.app";
+const WALLET = "Brpc8HoPo1d3Uiyo7kbERnjMqwLJJmbWxtwxHxzar6DU";
+
+async function fetchLabeledActivity(limit = 10) {
+  const txs = await fetch(
+    `${GATEWAY}/api/solana/transactions?wallet=${WALLET}&limit=${limit}`,
+    { headers: { "x-api-key": API_KEY } },
+  ).then((r) => r.json());
+
+  const labeled = await Promise.all(
+    txs.transactions.map(async (t: any) => {
+      const decoded = await fetch(
+        `${GATEWAY}/api/solana/decode-tx?signature=${t.signature}`,
+        { headers: { "x-api-key": API_KEY } },
+      ).then((r) => r.json());
+      return {
+        signature: t.signature,
+        category: decoded.category,
+        summary: decoded.summary,
+        status: decoded.details.status,
+      };
+    }),
+  );
+
+  return labeled;
+}
+```
+
+<Tip>
+  Combine with [Token Profile](/api-reference/solana/token-profile): when `decode-tx` returns `MemeCoin`, immediately look up the token to see if it's a rug your bot accidentally bought.
+</Tip>

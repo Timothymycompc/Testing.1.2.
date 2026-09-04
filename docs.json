@@ -1,11 +1,11 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "theme": "luma",
-  "name": "CryptoMCP",
+  "theme": "sequoia",
+  "name": "Solana AI Gateway",
   "colors": {
-    "primary": "#ef7025",
-    "light": "#eec9bc",
-    "dark": "#4fa1ab"
+    "primary": "#9945FF",
+    "light": "#14F195",
+    "dark": "#9945FF"
   },
   "favicon": "/favicon.svg",
   "navigation": {
@@ -18,59 +18,86 @@
             "pages": [
               "introduction",
               "quickstart",
-              "installation"
+              "authentication",
+              "pricing"
             ]
           },
           {
             "group": "Core Concepts",
             "pages": [
-              "concepts/mcp-overview",
-              "concepts/tools-and-resources",
-              "concepts/authentication"
+              "concepts/wallet-signatures",
+              "concepts/api-keys-and-credits",
+              "concepts/paywall-model"
             ]
           },
           {
-            "group": "Crypto APIs",
+            "group": "Guides",
             "pages": [
-              "apis/market-data",
-              "apis/on-chain",
-              "apis/wallets-and-balances",
-              "apis/defi"
-            ]
-          },
-          {
-            "group": "Configuration",
-            "pages": [
-              "configuration/env-setup",
-              "configuration/api-keys"
+              "guides/claim-api-key",
+              "guides/decode-transaction",
+              "guides/mcp-integration"
             ]
           },
           {
             "group": "Help",
             "pages": [
-              "help/faq",
-              "help/troubleshooting"
+              "help/errors",
+              "help/faq"
             ]
           }
         ]
       },
       {
-        "tab": "MCP Reference",
+        "tab": "API Reference",
         "groups": [
           {
-            "group": "Tools",
+            "group": "Overview",
             "pages": [
-              "reference/tools/price",
-              "reference/tools/blockchain",
-              "reference/tools/portfolio",
-              "reference/tools/news"
+              "api-reference/introduction"
             ]
           },
           {
-            "group": "Resources",
+            "group": "Keys & Auth",
             "pages": [
-              "reference/resources/overview",
-              "reference/resources/prompts"
+              "api-reference/keys/challenge",
+              "api-reference/keys/claim"
+            ]
+          },
+          {
+            "group": "Solana RPC",
+            "pages": [
+              "api-reference/solana/balance",
+              "api-reference/solana/blockhash",
+              "api-reference/solana/token-accounts",
+              "api-reference/solana/transactions"
+            ]
+          },
+          {
+            "group": "Intelligence Tools",
+            "pages": [
+              "api-reference/solana/find-ata",
+              "api-reference/solana/token-profile",
+              "api-reference/solana/optimal-fee",
+              "api-reference/solana/decode-tx",
+              "api-reference/solana/simulate"
+            ]
+          },
+          {
+            "group": "MCP",
+            "pages": [
+              "api-reference/mcp/manifest",
+              "api-reference/mcp/sse"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Playground",
+        "groups": [
+          {
+            "group": "Try it live",
+            "pages": [
+              "playground/index"
             ]
           }
         ]
@@ -80,12 +107,27 @@
   "navbar": {
     "primary": {
       "type": "github",
-      "href": "https://github.com"
+      "href": "https://github.com/Timothymycompc/solana-pulse-gateway"
     }
   },
   "footer": {
     "socials": {
-      "github": "https://github.com"
+      "github": "https://github.com/Timothymycompc/solana-pulse-gateway"
+    }
+  },
+  "api": {
+    "playground": {
+      "display": "interactive"
+    },
+    "examples": {
+      "defaults": "all",
+      "languages": [
+        "curl",
+        "javascript",
+        "python",
+        "typescript"
+      ],
+      "prefill": true
     }
   }
 }

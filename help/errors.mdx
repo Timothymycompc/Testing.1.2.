@@ -1,0 +1,131 @@
+---
+title: "Error codes and troubleshooting for Solana AI Gateway"
+sidebarTitle: "Error Codes"
+description: "Decode Solana AI Gateway HTTP status codes and response shapes. Learn how to fix 400, 401, 404, and 500 errors with real JSON examples and quick recovery steps."
+---
+
+Solana AI Gateway returns standard HTTP status codes with JSON bodies that include an `error` field and, on some endpoints, a `hint` field to help you recover quickly. This page lists every status code you may encounter, shows a real response body, and explains how to fix the underlying problem.
+
+## 400 Bad Request
+
+A 400 means a required query parameter or body field is missing or malformed. Some endpoints also include a `hint` field with the exact expected format.
+
+**Common causes**
+
+- Missing `wallet`, `mint`, or `signature` query parameters
+- Missing `transaction` in a POST body
+- Invalid base64 transaction payload
+
+**Example response**
+
+```json
+{
+  "error": "Missing parameters",
+  "hint": "Both 'wallet' and 'mint' are required. Example: /api/solana/find-ata?wallet=Addr...&mint=Mint...",
+  "live_status": "FAILED"
+}
+```
+
+**How to fix**
+
+1. Read the `hint` field for the exact parameter names and an example URL.
+2. Make sure query parameters are URL-encoded and body fields are sent as valid JSON.
+
+## 401 Unauthorized
+
+A 401 means the Ed25519 signature verification failed during the wallet challenge flow, or the Helius webhook authorization header was invalid.
+
+**Common causes**
+
+- The wallet signed the wrong challenge string
+- The signature was not encoded in base58
+- The challenge expired (a new challenge was requested after signing)
+
+**Example response**
+
+```json
+{
+  "error": "Invalid signature"
+}
+```
+
+**How to fix**
+
+1. Request a fresh challenge from `GET /api/keys/challenge`.
+2. Sign the exact `challenge` hex string with your wallet's private key.
+3. Submit the base58-encoded signature to `POST /api/keys/claim` immediately.
+
+## 404 Not Found
+
+A 404 can mean three different things depending on the endpoint: no pending API key exists for the wallet, a transaction signature could not be found on chain, or an MCP SSE session ID is invalid.
+
+**Common causes**
+
+- Wallet has not yet sent SOL to the gateway wallet to create a pending key
+- Transaction signature is not yet confirmed or was entered incorrectly
+- MCP client reused an old or malformed `sessionId`
+
+**Example responses**
+
+```json
+{
+  "error": "No pending key found for this wallet. Please send SOL to top up."
+}
+```
+
+```json
+{
+  "error": "Transaction not found or not yet confirmed"
+}
+```
+
+```json
+{
+  "error": "MCP SSE Session not found"
+}
+```
+
+**How to fix**
+
+1. For key claims: send SOL to the gateway wallet and wait for the Helius webhook to register the payment.
+2. For transactions: double-check the signature string and confirm the transaction has reached `confirmed` commitment.
+3. For MCP: open a new SSE connection at `GET /mcp/sse` to receive a fresh `sessionId`.
+
+## 402 Payment Required
+
+A 402 is returned by paid endpoints when the `x-api-key` header is missing, invalid, or the associated wallet has exhausted its free tier and credit balance.
+
+**Example response**
+
+```json
+{
+  "error": "Payment required",
+  "priceLamports": 2200000,
+  "instructions": "Pass header 'x-api-key: <key>' with sufficient balance. To top up, send SOL to Brpc8HoPo1d3Uiyo7kbERnjMqwLJJmbWxtwxHxzar6DU and claim your key.",
+  "payTo": "Brpc8HoPo1d3Uiyo7kbERnjMqwLJJmbWxtwxHxzar6DU"
+}
+```
+
+**How to fix**
+
+1. Include `x-api-key: <your-key>` on every paid request.
+2. If your free tier is exhausted, send SOL to the `payTo` address and claim a new key via `POST /api/keys/claim`.
+
+## 500 Internal Server Error
+
+A 500 means an unexpected server-side failure occurred, usually during a Solana RPC call or a database operation.
+
+**Example response**
+
+```json
+{
+  "error": "Could not fetch prioritization fees from cluster",
+  "live_status": "FAILED"
+}
+```
+
+**How to fix**
+
+1. Check the `error` message for the specific failure reason.
+2. Retry the request after a few seconds in case the Solana cluster was temporarily overloaded.
+3. If the error persists, verify your `network` parameter is either `mainnet-beta` or `devnet`.

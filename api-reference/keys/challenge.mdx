@@ -1,0 +1,47 @@
+---
+title: "Request a Solana wallet signing challenge for API access"
+sidebarTitle: "Challenge"
+description: "Get a 32-byte single-use challenge to sign with your Solana wallet. First step in the credentialless auth flow that mints your API key."
+openapi: "https://solana-pulse-gateway-1021990235790.us-central1.run.app/openapi.json GET /api/keys/challenge"
+---
+
+The first step in claiming your API key. Instead of email + password or a signup form, you prove control of a Solana wallet: request a random 32-byte challenge here, sign it with your wallet, then POST the signature to [Claim](/api-reference/keys/claim). No account, no KYC, no leaked passwords. **Public endpoint**, no key required.
+
+## Why agents use this
+
+- **No email, no signup form.** Autonomous agents don't have inboxes. Wallet signature is the only auth primitive they can perform.
+- **Single-use, so replay is impossible.** Each challenge is consumed the moment it's claimed.
+- **Bootstraps the whole flow.** From this call to a working key: two requests and a Phantom popup.
+- **Language-agnostic.** Sign with any Solana wallet SDK: web3.js, solders (Python), solana-sdk (Rust).
+
+## Use cases
+
+- **Phantom / Solflare popup onboarding.** Web app calls this, wallet popup asks user to sign, app POSTs to claim.
+- **MCP client auto-provisioning.** Claude Desktop MCP wrapper generates a key on first use by wallet-signing the challenge.
+- **Mobile wallet WalletConnect flow.** Deep link into the user's mobile wallet with the challenge, receive signature back, claim key.
+- **CLI setup script.** `npx create-solana-agent` runs the challenge + claim flow and writes the key to `.env`.
+- **Agent framework install.** Eliza / Rig plugin fetches challenge, signs with agent's own wallet, stores key for future calls.
+
+## Recipe: browser-side Phantom flow
+
+```typescript phantom-challenge.ts
+const GATEWAY = "https://solana-pulse-gateway-1021990235790.us-central1.run.app";
+
+// 1. Get the challenge (public, no auth)
+const { challenge } = await fetch(`${GATEWAY}/api/keys/challenge`).then((r) =>
+  r.json(),
+);
+
+// 2. Ask the wallet to sign it
+const phantom = (window as any).solana;
+await phantom.connect();
+const encoded = new TextEncoder().encode(challenge);
+const { signature } = await phantom.signMessage(encoded, "utf8");
+
+// 3. POST to /api/keys/claim (see next page)
+console.log({ challenge, signatureBase58: signature });
+```
+
+<Tip>
+  Before claiming, deposit SOL to the gateway wallet `Brpc8HoPo1d3Uiyo7kbERnjMqwLJJmbWxtwxHxzar6DU`. The claim step verifies you've paid before minting your key.
+</Tip>

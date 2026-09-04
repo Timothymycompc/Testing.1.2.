@@ -1,0 +1,44 @@
+---
+title: "Fetch Solana wallet SOL balance in one call"
+sidebarTitle: "Balance"
+description: "Return the native SOL balance for any wallet in lamports and SOL. Public endpoint, no API key needed, safe for dashboards and health checks."
+openapi: "https://solana-pulse-gateway-1021990235790.us-central1.run.app/openapi.json GET /api/solana/balance"
+---
+
+The most basic on-chain read: how much SOL does this wallet hold? This endpoint returns the balance in both lamports (integer) and SOL (float), pulled from the finalized state of the requested cluster. It's **free**, no API key required, so it's safe to call from agent bootstrap flows and health checks.
+
+## Why agents use this
+
+- **Pre-flight for every transaction.** Before your bot builds a swap, confirm the wallet has enough SOL for rent and fees.
+- **Free, so use it liberally.** No credit debit. Perfect for polling loops and dashboard widgets.
+- **Two units of measure.** `balance_lamports` for math, `balance_sol` for display. No conversion errors.
+- **Works on devnet.** Testing your bot against devnet? Same endpoint, same shape, just change `network`.
+
+## Use cases
+
+- **Agent "can I afford this?" guard.** Before submitting any paid gateway call or on-chain tx, check the wallet has minimum SOL. Skip if not.
+- **Wallet dashboard live widget.** Poll every 5 seconds for a Vue/React balance display.
+- **Health check / uptime ping.** Free endpoint = free ping. Alerts on non-200 from your monitoring stack.
+- **Multi-wallet portfolio.** Fan out balance checks across a family of wallets (treasury, hot, cold) in parallel.
+- **Referral leaderboard.** Show current SOL balance next to each referred wallet in your incentives dashboard.
+
+## Recipe: minimum-balance guard for a trading bot
+
+```typescript balance-guard.ts
+const GATEWAY = "https://solana-pulse-gateway-1021990235790.us-central1.run.app";
+const MIN_SOL = 0.05; // reserve for rent + priority fees
+
+async function canTrade(wallet: string): Promise<boolean> {
+  const res = await fetch(`${GATEWAY}/api/solana/balance?wallet=${wallet}`);
+  const { balance_sol } = await res.json();
+  if (balance_sol < MIN_SOL) {
+    console.warn(`Wallet ${wallet} below ${MIN_SOL} SOL, pausing bot.`);
+    return false;
+  }
+  return true;
+}
+```
+
+<Tip>
+  This is a free endpoint. Great for onboarding: users can hit it before claiming their API key to verify the gateway is live.
+</Tip>
