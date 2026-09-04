@@ -1,7 +1,7 @@
 ---
-title: "Built-In Prompt Templates for CryptoMCP"
+title: "CryptoMCP Prompt Templates: Workflows and Examples"
 sidebarTitle: "Prompts"
-description: "CryptoMCP ships pre-written MCP prompt templates that combine multiple tools for common crypto analysis workflows like portfolio review and market summaries."
+description: "Use CryptoMCP's four built-in MCP prompt templates to run portfolio reviews, market briefings, gas tracking, and DeFi pool comparisons in one step."
 ---
 
 MCP Prompts are reusable, pre-written instruction templates embedded directly in the CryptoMCP server. When you select one, your AI client automatically fills in the required inputs, orchestrates calls to the relevant CryptoMCP tools in the right order, and formats a polished response — all without you needing to craft the prompt yourself. They're the fastest way to run multi-step crypto workflows that would otherwise require several back-and-forth exchanges.
@@ -103,7 +103,11 @@ SOL  $198.4   ▲ 5.1% 24h  Vol: $4.9B
 
 ### Gas Tracker
 
-Pull a live cross-chain gas fee comparison across Ethereum mainnet, Polygon, and Arbitrum — no inputs required.
+Pull a live cross-chain gas fee comparison across Ethereum mainnet, Polygon, and Arbitrum in a single step.
+
+<Info>
+  This prompt requires no inputs. Just invoke it and CryptoMCP immediately fetches current gas fees across all three networks.
+</Info>
 
 **Tools invoked:** `get_gas` for `eth`, `get_gas` for `matic`, `get_gas` for `arb1`
 

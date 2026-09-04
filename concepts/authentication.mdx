@@ -1,5 +1,5 @@
 ---
-title: "Authentication and API Keys in CryptoMCP"
+title: "Setting Up Authentication and API Keys for CryptoMCP"
 sidebarTitle: "Authentication"
 description: "CryptoMCP uses provider API keys stored in your local .env file. Learn which keys are required and how they are passed to each crypto data provider."
 ---
@@ -8,9 +8,9 @@ CryptoMCP authenticates with crypto data providers on your behalf, so your AI as
 
 ## How Key Management Works
 
-When CryptoMCP starts, it reads environment variables from your `.env` file and stores them in memory for the lifetime of the server process. Every time a tool call requires a provider API, the server attaches the relevant key to the outbound HTTP request as a header or query parameter, depending on that provider's requirements. The AI client — whether that is Claude Desktop, Cursor, or any other MCP-compatible assistant — only ever receives the structured tool response, not the credentials used to fetch it.
+When CryptoMCP starts, it reads your API keys from the `.env` file you have configured. From that point on, every tool call that needs a data provider is authenticated automatically — you never have to pass a key yourself, and your AI client never sees the credentials. The only thing returned to the AI is the structured tool response.
 
-```
+```text
 .env file (local, never shared)
   → CryptoMCP server (reads keys at startup)
     → Outbound API request (key injected server-side)
@@ -18,7 +18,7 @@ When CryptoMCP starts, it reads environment variables from your `.env` file and 
         → Structured JSON (returned to AI client — no keys)
 ```
 
-This architecture means you can connect untrusted or third-party AI clients to CryptoMCP without exposing your provider credentials.
+This means you can connect Claude Desktop, Cursor, Windsurf, or any other MCP-compatible assistant to CryptoMCP without worrying about key exposure — the credentials never leave your local server.
 
 ## Required API Keys
 

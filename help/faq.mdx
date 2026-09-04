@@ -1,7 +1,7 @@
 ---
-title: "Frequently Asked Questions About CryptoMCP"
+title: "CryptoMCP FAQ: Common Questions About Setup and Use"
 sidebarTitle: "FAQ"
-description: "Answers to common questions about CryptoMCP setup, supported blockchains, API key requirements, and how MCP tool calls work."
+description: "Answers to common questions about CryptoMCP setup, supported blockchains, API key requirements, rate limits, and how MCP tool calls work in practice."
 ---
 
 Whether you're evaluating CryptoMCP for the first time or you've been using it for a while and have a specific question, this page covers the most common things users ask. If you don't find your answer here, check the [Troubleshooting](/help/troubleshooting) guide or open a GitHub issue.
@@ -77,14 +77,14 @@ Set `LOG_LEVEL=debug` in your `.env` file for even more detail, including raw AP
 
 <Accordion title="Can I add my own custom tools?">
 
-Yes. CryptoMCP is designed to be extensible. To add a custom tool:
+Yes. CryptoMCP is open-source and designed to be extensible, so you can add tools that call any data source you like. The general process is:
 
-1. Create a new file in the `src/tools/` directory following the existing tool pattern.
-2. Define your tool's name, description, and JSON Schema input parameters.
-3. Implement the handler function that calls your data source and returns a structured result.
-4. Register the tool in `src/tools/index.ts`.
+1. **Fork or clone the CryptoMCP repository** and install dependencies.
+2. **Create a new tool module** following the same structure as the existing built-in tools — define a name, a plain-English description, and the JSON Schema for its input parameters.
+3. **Implement the handler** that fetches data from your chosen source and returns a structured result.
+4. **Register your tool** in the server’s tool index so it is automatically advertised to connected AI clients.
 
-Your tool will automatically appear in the MCP tool list and be available to any connected AI client. See the [MCP Tools Reference](/reference/tools/price) for examples of how tools are structured.
+Once registered, your tool appears alongside the built-in tools in any MCP-aware client. See the [MCP Tools Reference](/reference/tools/price) for worked examples of tool structure and parameter definitions.
 
 </Accordion>
 

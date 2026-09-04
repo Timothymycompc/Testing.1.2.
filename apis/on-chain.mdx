@@ -1,7 +1,7 @@
 ---
-title: "Querying On-Chain Blockchain Data with CryptoMCP"
+title: "Query On-Chain Blockchain Data with CryptoMCP Tools"
 sidebarTitle: "On-Chain Data"
-description: "Look up transactions, blocks, and live gas fees on Ethereum and other EVM chains using CryptoMCP's blockchain query tools."
+description: "Look up transactions, blocks, and live gas fees on Ethereum and other EVM-compatible chains using CryptoMCP's on-chain query tools."
 ---
 
 CryptoMCP connects you directly to on-chain data across major EVM-compatible blockchains. You can look up individual transactions by hash, inspect blocks, and fetch real-time gas fee estimates — all through natural language prompts in your AI client, without needing to call block explorers or RPC endpoints manually.
@@ -39,8 +39,8 @@ The tool returns:
 ```json
 {
   "hash": "0xabc123def456abc123def456abc123def456abc123def456abc123def456abc1",
-  "from": "0xSenderAddressHere",
-  "to": "0xRecipientAddressHere",
+  "from": "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
+  "to": "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B",
   "value": "1.25",
   "value_currency": "ETH",
   "gas_used": 21000,
@@ -126,7 +126,7 @@ The tool returns:
   "hash": "0xblockhashexample1234567890abcdef1234567890abcdef1234567890abcdef",
   "timestamp": "2024-11-15T14:20:00Z",
   "transaction_count": 184,
-  "miner": "0xMinerAddressHere"
+  "miner": "0x95222290DD7278Aa3Ddd389Cc1E1d165CC4BAfe5"
 }
 ```
 

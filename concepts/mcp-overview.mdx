@@ -1,7 +1,7 @@
 ---
-title: "What Is the Model Context Protocol (MCP)?"
+title: "What Is the Model Context Protocol (MCP) for Crypto?"
 sidebarTitle: "MCP Overview"
-description: "The Model Context Protocol lets AI assistants call external tools and read data sources. CryptoMCP exposes crypto APIs as MCP tools."
+description: "Learn how the Model Context Protocol works and how CryptoMCP uses it to expose live crypto and blockchain data as callable AI tools."
 ---
 
 The Model Context Protocol (MCP) is an open standard that lets AI models like Claude call external tools, read live data sources, and execute actions — all without bespoke integrations for every service. Instead of building a custom plugin for each AI client, a single MCP server makes your functionality available to any compatible assistant. CryptoMCP implements this standard to expose the full breadth of crypto and blockchain data as named, callable tools your AI can use the moment you ask.
@@ -12,7 +12,7 @@ MCP follows a client-server architecture. Your AI assistant acts as the MCP clie
 
 Here is how a typical CryptoMCP interaction flows:
 
-```
+```text
 You (natural language)
   → AI Client (Claude, Cursor, etc.)
     → CryptoMCP Server (MCP protocol)

@@ -1,7 +1,7 @@
 ---
-title: "get_price and get_market_data Tool Reference"
+title: "get_price & get_market_data — CryptoMCP Reference"
 sidebarTitle: "Price & Market"
-description: "Full reference for the get_price and get_market_data MCP tools, including all parameters, response schemas, and example payloads."
+description: "Complete parameter and response schema reference for the get_price and get_market_data MCP tools, with batch query examples and error codes."
 ---
 
 These two tools query live price and market data from configured providers, giving your AI client instant access to current token prices, 24-hour trading volumes, market capitalizations, and price change metrics across hundreds of cryptocurrencies.
@@ -23,6 +23,24 @@ Returns the current price of one or more tokens in a specified quote currency. U
 <ParamField body="symbols" type="string[]">
   An array of token ticker symbols for a batch price query, e.g. `["BTC", "ETH", "SOL"]`. When provided, `symbol` is ignored. The response will be a map of each symbol to its price.
 </ParamField>
+
+### Response Schema
+
+<ResponseField name="symbol" type="string">
+  The token ticker symbol as provided (or each symbol key when using the batch `symbols` parameter).
+</ResponseField>
+
+<ResponseField name="currency" type="string">
+  The quote currency used for the returned price value.
+</ResponseField>
+
+<ResponseField name="price" type="number">
+  The current price of the token in the specified quote currency. In batch mode, prices are returned as a `prices` map keyed by symbol.
+</ResponseField>
+
+<ResponseField name="timestamp" type="string">
+  ISO 8601 timestamp indicating when the price data was retrieved from the provider.
+</ResponseField>
 
 ### Example Request
 

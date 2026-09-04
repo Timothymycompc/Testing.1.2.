@@ -1,7 +1,7 @@
 ---
-title: "Setting Up API Keys for Crypto Data Providers"
+title: "CryptoMCP Data Provider API Keys: Setup and Reference"
 sidebarTitle: "API Keys"
-description: "Get and configure API keys for CoinGecko, Etherscan, and other crypto data providers that power CryptoMCP's tools."
+description: "Step-by-step instructions for obtaining free API keys from CoinGecko, Etherscan, Polygonscan, BscScan, and CryptoPanic to power CryptoMCP's tools."
 ---
 
 CryptoMCP aggregates data from several specialized crypto APIs, each requiring its own key. All of these providers offer free tiers that are more than sufficient for development and personal exploration — you don't need to enter a credit card to get started. This guide walks you through obtaining a key from each provider and tells you exactly where to paste it.
@@ -20,6 +20,9 @@ CryptoMCP aggregates data from several specialized crypto APIs, each requiring i
   </Card>
   <Card title="BscScan" icon="database" href="https://bscscan.com/myapikey">
     BNB Smart Chain on-chain data including wallet balances, token transfers, and block lookups.
+  </Card>
+  <Card title="CryptoPanic" icon="newspaper" href="https://cryptopanic.com/developers/api/">
+    Curated crypto news headlines and market sentiment aggregated from across the web, powering the `get_news` tool.
   </Card>
 </CardGroup>
 
@@ -174,6 +177,36 @@ BscScan is the block explorer for BNB Smart Chain (formerly Binance Smart Chain)
 ### Free tier limits
 
 BscScan's free tier provides **5 calls per second** and **100,000 calls per day**, consistent with the other Etherscan-family explorers.
+
+</Accordion>
+
+<Accordion title="CryptoPanic — Crypto News Headlines">
+
+### What CryptoPanic provides
+
+CryptoPanic is a news aggregator that monitors hundreds of crypto-focused publications, social channels, and official project blogs, then scores each item for sentiment. CryptoMCP uses it to surface relevant headlines through the `get_news` tool.
+
+### Which CryptoMCP tools use it
+
+- `get_news` — latest crypto news headlines with source and sentiment data
+
+### How to get your free API key
+
+<Steps>
+  <Step title="Create a CryptoPanic account">
+    Go to [cryptopanic.com](https://cryptopanic.com) and click **Sign up** in the top-right corner. Register with your email address.
+  </Step>
+  <Step title="Open the API section">
+    After confirming your email, log in and navigate to **Developers → API** from the site header, or go directly to [cryptopanic.com/developers/api/](https://cryptopanic.com/developers/api/).
+  </Step>
+  <Step title="Copy your auth token">
+    Your personal **Auth Token** is displayed on the API page. Click to copy it and paste it as the value of `CRYPTOPANIC_API_KEY` in your `.env` file. No additional steps are required — the token is active immediately.
+  </Step>
+</Steps>
+
+### Free tier limits
+
+The CryptoPanic free plan provides access to the news feed API with a rate limit of **1 request per second** and up to **1,000 requests per day**. This is more than sufficient for personal use and development. CryptoMCP’s news caching (`CACHE_TTL_NEWS`, default 300 seconds) keeps calls well within this limit during normal interactive sessions.
 
 </Accordion>
 
