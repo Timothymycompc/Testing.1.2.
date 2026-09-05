@@ -46,6 +46,12 @@
               "help/errors",
               "help/faq"
             ]
+          },
+          {
+            "group": "Blog",
+            "pages": [
+              "blog/preventing-the-lobstar-bug"
+            ]
           }
         ]
       },

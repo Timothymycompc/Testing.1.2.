@@ -1,189 +1,65 @@
 ---
-title: "Claim your Solana AI Gateway API key in 60 seconds"
+title: "Claim your Solana AI Gateway API key in 90 seconds"
 sidebarTitle: "Claim Key"
-description: "Send SOL, sign a challenge with your wallet, and receive an API key. No signup, no email, no dashboard. Just wallet-native auth."
+description: "Send 0.01 SOL, sign a challenge with your wallet, get an API key. No signup, no email, no dashboard, no CAPTCHAs."
 ---
 
-Get an API key by paying with any Solana wallet: **Phantom**, **Solflare**, or **Backpack**. Send 0.01 SOL to the gateway wallet, sign a one-time challenge to prove ownership, and receive your key immediately. No email, no signup, no dashboard.
+Claim an API key in under 90 seconds using **Phantom**, **Solflare**, or **Backpack**. No email, no signup, no dashboard. The wallet you pay from becomes the wallet you sign with, and the resulting key is tied to that address forever.
+
+<Card title="Open the claim tool" icon="key" horizontal href="https://solana-pulse-gateway-1021990235790.us-central1.run.app/claim">
+  Connect your wallet, send 0.01 SOL, sign, done. Opens in a new tab so this page stays open for reference.
+</Card>
+
+## What happens when you click the button
 
 <Steps>
-  <Step title="Send 0.01 SOL to the gateway wallet">
-    Send at least 0.01 SOL from the wallet you want your API key tied to. The sending wallet is the one you'll sign with in step 2.
+  <Step title="Connect wallet (10 sec)">
+    The tool detects your installed Solana wallet extension (Phantom, Solflare, or Backpack) and asks you to approve the connection. Your public address is now linked to the session. No keys or seed phrase are ever exposed.
+  </Step>
+  <Step title="Send 0.01 SOL (~30 sec)">
+    The tool shows you the gateway wallet address with a one-click copy button. Send at least **0.01 SOL** from the wallet you just connected. The page automatically polls for your payment every 3 seconds. As soon as the on-chain webhook confirms it, the next step lights up.
 
     **Gateway wallet:** `Brpc8HoPo1d3Uiyo7kbERnjMqwLJJmbWxtwxHxzar6DU`
-
-    Wait ~15 seconds after your transaction confirms for the credit to land.
   </Step>
-  <Step title="Connect wallet and claim">
-    Click below. Your wallet will prompt you to connect, then to sign a challenge message. This proves you own the wallet without exposing your private key. Nothing is broadcast on-chain.
+  <Step title="Sign the challenge (5 sec)">
+    Your wallet pops a signature request for a one-time challenge string. Signing is free, nothing is broadcast on-chain, and it proves you own the wallet that just paid.
   </Step>
-  <Step title="Save your key">
-    You'll only see the key **once**. Copy it to a safe place, then start making calls with `x-api-key: your_key_here`.
+  <Step title="Copy your key (5 sec)">
+    Your API key appears on screen with a copy button. **Save it immediately.** You will not see it again. Keys are hashed server-side, not stored in plaintext.
   </Step>
 </Steps>
 
-<div id="claim-widget-root" style={{maxWidth: "640px", margin: "2rem auto"}}>
-  <div id="claim-status" style={{padding: "1rem", borderRadius: "8px", background: "rgba(153, 69, 255, 0.08)", border: "1px solid rgba(153, 69, 255, 0.25)", marginBottom: "1rem", fontSize: "0.95rem"}}>
-    Ready. Click <strong>Connect Wallet</strong> to begin.
-  </div>
-
-  <div style={{display: "flex", gap: "0.75rem", flexWrap: "wrap", marginBottom: "1rem"}}>
-    <button id="claim-connect-btn" style={{flex: "1 1 auto", padding: "0.85rem 1.25rem", background: "linear-gradient(90deg, #9945FF 0%, #14F195 100%)", color: "#0b0b0f", border: "none", borderRadius: "8px", fontWeight: 700, fontSize: "0.95rem", cursor: "pointer"}}>
-      Connect Wallet
-    </button>
-    <button id="claim-sign-btn" disabled style={{flex: "1 1 auto", padding: "0.85rem 1.25rem", background: "#1a1a24", color: "#fff", border: "1px solid #2a2a3a", borderRadius: "8px", fontWeight: 600, fontSize: "0.95rem", cursor: "not-allowed", opacity: 0.5}}>
-      Sign &amp; Claim Key
-    </button>
-  </div>
-
-  <div id="claim-wallet-info" style={{display: "none", fontSize: "0.85rem", opacity: 0.75, marginBottom: "1rem", fontFamily: "monospace"}}></div>
-
-  <div id="claim-result" style={{display: "none", padding: "1.25rem", background: "#0b0b0f", border: "2px solid #14F195", borderRadius: "8px", marginTop: "1rem"}}>
-    <div style={{fontSize: "0.85rem", color: "#14F195", marginBottom: "0.5rem", fontWeight: 600}}>✓ YOUR API KEY (save this now — you won't see it again)</div>
-    <code id="claim-key-value" style={{display: "block", padding: "0.75rem", background: "#000", color: "#14F195", borderRadius: "4px", wordBreak: "break-all", fontSize: "0.95rem", marginBottom: "0.75rem"}}></code>
-    <button id="claim-copy-btn" style={{padding: "0.5rem 1rem", background: "#14F195", color: "#0b0b0f", border: "none", borderRadius: "4px", fontWeight: 600, cursor: "pointer"}}>
-      Copy Key
-    </button>
-  </div>
-</div>
-
-<script src="https://unpkg.com/[email protected]/dist/index.iife.min.js"></script>
-<script src="https://unpkg.com/[email protected]/dist/nacl.min.js"></script>
-<script dangerouslySetInnerHTML={{__html: `
-(function() {
-  var GATEWAY = "https://solana-pulse-gateway-1021990235790.us-central1.run.app";
-  var challenge = null;
-  var walletPubkey = null;
-  var walletProvider = null;
-
-  function el(id) { return document.getElementById(id); }
-  function setStatus(msg, kind) {
-    var s = el("claim-status"); if (!s) return;
-    s.innerHTML = msg;
-    var colors = { info: "rgba(153, 69, 255, 0.25)", success: "#14F195", error: "#ff5c5c" };
-    s.style.borderColor = colors[kind] || colors.info;
-  }
-  function enableSign(on) {
-    var b = el("claim-sign-btn"); if (!b) return;
-    b.disabled = !on;
-    b.style.cursor = on ? "pointer" : "not-allowed";
-    b.style.opacity = on ? "1" : "0.5";
-    if (on) { b.style.background = "linear-gradient(90deg, #14F195 0%, #9945FF 100%)"; b.style.color = "#0b0b0f"; }
-  }
-
-  function detectProvider() {
-    if (window.phantom && window.phantom.solana) return { name: "Phantom", provider: window.phantom.solana };
-    if (window.solflare && window.solflare.isSolflare) return { name: "Solflare", provider: window.solflare };
-    if (window.backpack) return { name: "Backpack", provider: window.backpack };
-    if (window.solana) return { name: "Solana wallet", provider: window.solana };
-    return null;
-  }
-
-  async function connect() {
-    var found = detectProvider();
-    if (!found) {
-      setStatus('No Solana wallet extension detected. Install <a href="https://phantom.app" target="_blank" style="color:#14F195">Phantom</a> or <a href="https://solflare.com" target="_blank" style="color:#14F195">Solflare</a> and refresh.', "error");
-      return;
-    }
-    try {
-      setStatus("Connecting to " + found.name + "...", "info");
-      var resp = await found.provider.connect();
-      walletProvider = found.provider;
-      walletPubkey = (resp && resp.publicKey ? resp.publicKey : found.provider.publicKey).toString();
-      var infoEl = el("claim-wallet-info");
-      infoEl.style.display = "block";
-      infoEl.innerHTML = "Connected: " + walletPubkey;
-      setStatus("Fetching challenge from gateway...", "info");
-      var r = await fetch(GATEWAY + "/api/keys/challenge");
-      if (!r.ok) throw new Error("Failed to fetch challenge: HTTP " + r.status);
-      var data = await r.json();
-      challenge = data.challenge;
-      setStatus("Wallet connected. Click <strong>Sign &amp; Claim Key</strong> to sign the challenge and receive your API key.", "success");
-      enableSign(true);
-    } catch (e) {
-      setStatus("Connect failed: " + (e.message || e), "error");
-    }
-  }
-
-  async function signAndClaim() {
-    if (!walletProvider || !walletPubkey || !challenge) {
-      setStatus("Not ready. Connect wallet first.", "error");
-      return;
-    }
-    try {
-      setStatus("Waiting for wallet signature...", "info");
-      var msgBytes = new TextEncoder().encode(challenge);
-      var sigResp = await walletProvider.signMessage(msgBytes, "utf8");
-      var sigBytes = sigResp && sigResp.signature ? sigResp.signature : sigResp;
-      var sigB58 = window.bs58.encode(sigBytes);
-
-      setStatus("Signature captured. Claiming key from gateway...", "info");
-      var r = await fetch(GATEWAY + "/api/keys/claim", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ wallet: walletPubkey, signature: sigB58, challenge: challenge })
-      });
-      var body = await r.json();
-      if (!r.ok || !body.apiKey) {
-        var hint = "";
-        if (r.status === 404) hint = " Did you send at least 0.01 SOL to the gateway wallet and wait ~15 seconds?";
-        throw new Error((body.error || ("HTTP " + r.status)) + hint);
-      }
-      el("claim-key-value").textContent = body.apiKey;
-      el("claim-result").style.display = "block";
-      setStatus("🎉 Key claimed. Save it now, you won't see it again.", "success");
-    } catch (e) {
-      setStatus("Claim failed: " + (e.message || e), "error");
-    }
-  }
-
-  function copyKey() {
-    var v = el("claim-key-value").textContent;
-    navigator.clipboard.writeText(v).then(function() {
-      var b = el("claim-copy-btn"); var t = b.textContent;
-      b.textContent = "Copied!"; setTimeout(function(){ b.textContent = t; }, 1500);
-    });
-  }
-
-  function wire() {
-    var c = el("claim-connect-btn"); var s = el("claim-sign-btn"); var k = el("claim-copy-btn");
-    if (!c || !s || !k) { setTimeout(wire, 100); return; }
-    c.addEventListener("click", connect);
-    s.addEventListener("click", signAndClaim);
-    k.addEventListener("click", copyKey);
-  }
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", wire); else wire();
-})();
-`}} />
-
 ## First call after claim
 
-Once you've copied your key, try it against any paid endpoint:
+The moment you have your key, run this to confirm it works:
 
 ```bash Test your key
 curl -H "x-api-key: YOUR_KEY_HERE" \
   "https://solana-pulse-gateway-1021990235790.us-central1.run.app/api/solana/token-profile?mint=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
 ```
 
-If you get a full USDC token profile back, you're live.
+A full USDC token profile confirms you're live.
 
 ## Free credits included
 
-Every key starts with **50 free lifetime calls** and **15 free calls per day**. After that, each call costs 0.0022 SOL. Send more SOL to the same gateway wallet from the same signing wallet to top up.
+Every key starts with **50 free lifetime calls** and **15 free calls per day**. After that, each call costs 0.0022 SOL. Send more SOL from the same wallet to top up. No plan changes, no card required.
 
 ## Troubleshooting
 
 <AccordionGroup>
-  <Accordion title="No wallet detected">
-    Install [Phantom](https://phantom.app), [Solflare](https://solflare.com/download), or [Backpack](https://backpack.app) as a browser extension. Refresh this page after install.
+  <Accordion title="Claim button opens a page that says 'No wallet detected'">
+    Install [Phantom](https://phantom.app), [Solflare](https://solflare.com/download), or [Backpack](https://backpack.app) as a browser extension, then refresh the claim tool. Mobile wallet apps that have a built-in browser (Phantom mobile, Solflare mobile) also work if you open the claim URL inside the wallet's browser.
   </Accordion>
-  <Accordion title="Claim returned 404 'no pending key'">
-    The gateway didn't see your 0.01 SOL yet. Check your transaction confirmed on-chain, then wait ~30 seconds for the webhook to process it. Retry claim with a fresh challenge (reconnect wallet).
+  <Accordion title="Payment sent but the tool is stuck on 'Waiting for your payment to confirm'">
+    Confirmed transactions take up to 30 seconds to appear in the webhook. If it hangs longer than 60 seconds, verify the transaction succeeded on [Solscan](https://solscan.io) and that you sent to the exact gateway wallet address shown in the tool.
   </Accordion>
-  <Accordion title="Claim returned 401 'invalid signature'">
-    You signed with a different wallet than the one that sent the SOL. Disconnect, switch active wallet, and reconnect.
+  <Accordion title="Sign step returns 'invalid signature'">
+    You signed with a different wallet than the one that sent the SOL. Disconnect from the tool, switch your active wallet in the extension, refresh, and start over.
   </Accordion>
   <Accordion title="Lost my key">
-    Send another 0.01 SOL from the same wallet to generate a new one. Keys are not recoverable.
+    Keys are unrecoverable by design (only hashes are stored server-side). Send another 0.01 SOL from the same wallet to generate a new one. Your old key stops working the moment the new one is claimed.
+  </Accordion>
+  <Accordion title="Do I need to trust the claim tool with my private key?">
+    No. The tool never sees your private key, seed phrase, or any wallet secret. It only reads your public address, requests a message signature (which your wallet performs locally in its own UI), and posts the resulting signature to the gateway. The gateway verifies the signature cryptographically against your public key. This is the same pattern used by every "Sign in with Solana" login flow.
   </Accordion>
 </AccordionGroup>
