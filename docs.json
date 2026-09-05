@@ -18,8 +18,10 @@
             "pages": [
               "introduction",
               "quickstart",
+              "claim",
               "authentication",
-              "pricing"
+              "pricing",
+              "stats"
             ]
           },
           {
@@ -106,9 +108,16 @@
   },
   "navbar": {
     "primary": {
-      "type": "github",
-      "href": "https://github.com/Timothymycompc/solana-pulse-gateway"
-    }
+      "type": "button",
+      "href": "/claim",
+      "label": "Claim API Key"
+    },
+    "links": [
+      {
+        "href": "/stats",
+        "label": "Live Stats"
+      }
+    ]
   },
   "footer": {
     "socials": {
