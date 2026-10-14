@@ -1,148 +1,15 @@
 {
   "$schema": "https://mintlify.com/docs.json",
   "theme": "sequoia",
-  "name": "Solana AI Gateway",
-  "colors": {
-    "primary": "#9945FF",
-    "light": "#14F195",
-    "dark": "#9945FF"
-  },
+  "name": "Solana Pulse",
+  "colors": { "primary": "#9945FF", "light": "#14F195", "dark": "#9945FF" },
   "favicon": "/favicon.svg",
-  "navigation": {
-    "tabs": [
-      {
-        "tab": "Documentation",
-        "groups": [
-          {
-            "group": "Get Started",
-            "pages": [
-              "introduction",
-              "quickstart",
-              "claim",
-              "authentication",
-              "pricing",
-              "stats"
-            ]
-          },
-          {
-            "group": "Core Concepts",
-            "pages": [
-              "concepts/wallet-signatures",
-              "concepts/api-keys-and-credits",
-              "concepts/paywall-model"
-            ]
-          },
-          {
-            "group": "Guides",
-            "pages": [
-              "guides/claim-api-key",
-              "guides/decode-transaction",
-              "guides/mcp-integration"
-            ]
-          },
-          {
-            "group": "Help",
-            "pages": [
-              "help/errors",
-              "help/faq"
-            ]
-          },
-          {
-            "group": "Blog",
-            "pages": [
-              "blog/preventing-the-lobstar-bug"
-            ]
-          }
-        ]
-      },
-      {
-        "tab": "API Reference",
-        "groups": [
-          {
-            "group": "Overview",
-            "pages": [
-              "api-reference/introduction"
-            ]
-          },
-          {
-            "group": "Keys & Auth",
-            "pages": [
-              "api-reference/keys/challenge",
-              "api-reference/keys/claim"
-            ]
-          },
-          {
-            "group": "Solana RPC",
-            "pages": [
-              "api-reference/solana/balance",
-              "api-reference/solana/blockhash",
-              "api-reference/solana/token-accounts",
-              "api-reference/solana/transactions"
-            ]
-          },
-          {
-            "group": "Intelligence Tools",
-            "pages": [
-              "api-reference/solana/find-ata",
-              "api-reference/solana/token-profile",
-              "api-reference/solana/optimal-fee",
-              "api-reference/solana/decode-tx",
-              "api-reference/solana/simulate"
-            ]
-          },
-          {
-            "group": "MCP",
-            "pages": [
-              "api-reference/mcp/manifest",
-              "api-reference/mcp/sse"
-            ]
-          }
-        ]
-      },
-      {
-        "tab": "Playground",
-        "groups": [
-          {
-            "group": "Try it live",
-            "pages": [
-              "playground/index"
-            ]
-          }
-        ]
-      }
-    ]
-  },
+  "navigation": { "pages": ["introduction"] },
   "navbar": {
     "primary": {
       "type": "button",
-      "href": "/claim",
-      "label": "Claim API Key"
-    },
-    "links": [
-      {
-        "href": "/stats",
-        "label": "Live Stats"
-      }
-    ]
-  },
-  "footer": {
-    "socials": {
-      "github": "https://github.com/Timothymycompc/solana-pulse-gateway"
-    }
-  },
-  "api": {
-    "playground": {
-      "display": "interactive"
-    },
-    "examples": {
-      "defaults": "all",
-      "languages": [
-        "curl",
-        "javascript",
-        "python",
-        "typescript"
-      ],
-      "prefill": true
+      "label": "Open the docs",
+      "href": "https://solana-pulse-gateway-1021990235790.us-central1.run.app/docs/quickstart"
     }
   }
 }

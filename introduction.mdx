@@ -1,45 +1,18 @@
 ---
-title: "Solana AI Gateway: Zero-Trust API access for AI agents"
-sidebarTitle: "Introduction"
-description: "Solana AI Gateway is a wallet-authenticated, credit-metered API gateway that gives AI agents safe, processed access to live Solana intelligence."
+title: "These docs have moved"
+description: "Solana Pulse documentation now lives on the Solana Pulse site, generated from the running code so it is always current."
 ---
 
-Solana AI Gateway is a Zero-Trust API layer that authenticates callers with Solana wallet signatures instead of shared secrets, then meters access to a suite of "pain-killer" endpoints designed for AI agents. Instead of raw RPC data, you get processed intelligence: resolved token accounts, security-graded token profiles, congestion-aware fee tiers, and human-readable transaction summaries.
+The pages that used to be here described an older version of this project (API keys, prepaid credits, referral discounts and old endpoint names). **None of that exists anymore**, so the pages were removed rather than left to mislead.
 
-## Why it exists
+Solana Pulse is a set of safety and lookup tools for AI agents working on Solana. The current documentation is written from the live tool list, so it can't fall out of date:
 
-LLM agents fail on Solana for predictable reasons: they hallucinate addresses, miscalculate decimals, misread program logs, and pay the wrong priority fee. This gateway handles the plumbing server-side so the agent can focus on intent.
-
-<CardGroup cols={2}>
-  <Card title="Wallet-based auth" icon="key" href="/authentication">
-    Sign a challenge with your Solana wallet to claim a credit-backed API key. No passwords, no shared secrets.
-  </Card>
-  <Card title="Agent-ready endpoints" icon="robot" href="/api-reference/introduction">
-    Processed intelligence instead of raw RPC. Address resolution, fee tiers, transaction decoding, and more.
-  </Card>
-  <Card title="MCP native" icon="plug" href="/guides/mcp-integration">
-    Ships with an MCP manifest and SSE endpoint so Claude Desktop, Cursor, and other agents discover tools automatically.
-  </Card>
-  <Card title="Pay per call" icon="coins" href="/concepts/api-keys-and-credits">
-    Pre-paid credits managed on-chain. Keys unlock only after a wallet signature proves ownership.
-  </Card>
-</CardGroup>
-
-## What you get
-
-- **Cryptographic auth.** Ed25519 signature verification with `tweetnacl`. The server never sees a password.
-- **Credit-metered keys.** Balances live in Postgres; the `requirePayment` middleware debits on each paid call.
-- **Processed intelligence.** ATA resolution, honeypot risk scoring, prioritization-fee tiers, transaction categorization.
-- **MCP discovery.** `/.well-known/mcp.json` and `/mcp/sse` let agents self-configure.
-
-## Next steps
-
-<CardGroup cols={2}>
-  <Card title="Quickstart" icon="rocket" href="/quickstart">
-    Claim a key with your wallet and make your first authenticated call in under five minutes.
-  </Card>
-
-  <Card title="Core concepts" icon="book" href="/concepts/wallet-signatures">
-    How wallet signatures, credits, and the paywall middleware fit together.
-  </Card>
-</CardGroup>
+| What you need | Where it is |
+| --- | --- |
+| Getting started | [Quickstart](https://solana-pulse-gateway-1021990235790.us-central1.run.app/docs/quickstart) |
+| Every tool, input and output | [Toolbox](https://solana-pulse-gateway-1021990235790.us-central1.run.app/toolbox) |
+| Prices and free calls | [Pricing](https://solana-pulse-gateway-1021990235790.us-central1.run.app/docs/pricing) |
+| Connect from Claude, Cursor or any MCP client | [Connect](https://solana-pulse-gateway-1021990235790.us-central1.run.app/docs/connect) |
+| MCP endpoint | `https://solana-pulse-gateway-1021990235790.us-central1.run.app/mcp` |
+| Summary for AI assistants | [llms.txt](https://solana-pulse-gateway-1021990235790.us-central1.run.app/llms.txt) |
+| MCP discovery file | [mcp.json](https://solana-pulse-gateway-1021990235790.us-central1.run.app/.well-known/mcp.json) |
